@@ -1,5 +1,10 @@
 package domain
 
+import (
+	"math"
+	"math/bits"
+)
+
 // Every rounding rule of the domain lives in this file (§6.2): floor plus remainder for installments,
 // and half-up for divisions.
 
@@ -18,4 +23,22 @@ func divHalfUp(n, d int64) int64 {
 		quotient++
 	}
 	return quotient
+}
+
+// mulDivHalfUp computes a × b ÷ d rounded half-up, for a, b ≥ 0 and d > 0. The product is kept in 128
+// bits, so a savings rate over large sums cannot overflow; a quotient beyond int64 saturates.
+func mulDivHalfUp(a, b, d int64) int64 {
+	divisor := uint64(d)                       //nolint:gosec // d > 0 by contract
+	hi, lo := bits.Mul64(uint64(a), uint64(b)) //nolint:gosec // a, b ≥ 0 by contract
+	if hi >= divisor {
+		return math.MaxInt64
+	}
+	quotient, remainder := bits.Div64(hi, lo, divisor)
+	if remainder >= divisor-remainder {
+		quotient++
+	}
+	if quotient > math.MaxInt64 {
+		return math.MaxInt64
+	}
+	return int64(quotient)
 }

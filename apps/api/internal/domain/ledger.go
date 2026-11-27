@@ -40,6 +40,14 @@ func (t *Totals) add(kind MovementType, a Amount) {
 	}
 }
 
+func (t *Totals) sum(o Totals) {
+	t.Income += o.Income
+	t.Expense += o.Expense
+	t.Daily += o.Daily
+	t.Saving += o.Saving
+	t.Card += o.Card
+}
+
 // net is what the movements do to the balance: income in, everything else out.
 func (t Totals) net() Amount { return t.Income - t.Expense - t.Daily - t.Saving - t.Card }
 
@@ -150,11 +158,14 @@ func (l Ledger) flowsByDate(to Date) map[Date]flows {
 // forecastOn is the forecast that counts on d: the daily value after today and from D0 on, else zero.
 // At the user's midnight the day becomes today and its forecast disappears.
 func (l Ledger) forecastOn(d, today Date) Amount {
-	if d.After(today) && !d.Before(l.Start) {
+	if l.hasForecast(d, today) {
 		return l.DailyForecast
 	}
 	return 0
 }
+
+// hasForecast reports whether d carries the forecast: it is after today and on or after D0.
+func (l Ledger) hasForecast(d, today Date) bool { return d.After(today) && !d.Before(l.Start) }
 
 func (l Ledger) status(balance Amount) Status {
 	switch {
