@@ -46,3 +46,9 @@ var (
 	ErrForecastAmountNotPositive = &Error{Code: "forecast.amount_not_positive"}
 	ErrHorizonOutOfRange         = &Error{Code: "horizon.months_out_of_range"}
 )
+
+// Uniqueness and ownership rules the database enforces as a second lock.
+var (
+	ErrEmailTaken            = &Error{Code: "user.email_taken"}
+	ErrWorkspaceHasTransfers = &Error{Code: "workspace.has_transfers"}
+)
