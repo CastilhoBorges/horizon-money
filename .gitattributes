@@ -1,0 +1,13 @@
+* text=auto eol=lf
+
+# Vendored agent skills: keep them out of language statistics and collapsed in diffs.
+.agents/skills/** linguist-vendored=true
+.claude/skills/** linguist-vendored=true
+
+# Generated files.
+THIRD_PARTY_NOTICES.md linguist-generated=true
+docs/decisions/README.md linguist-generated=true
+docs/devlog/README.md linguist-generated=true
+docs/specs/README.md linguist-generated=true
+docs/plans/README.md linguist-generated=true
+pnpm-lock.yaml linguist-generated=true

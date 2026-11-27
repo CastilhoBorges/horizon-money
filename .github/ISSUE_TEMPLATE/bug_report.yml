@@ -1,0 +1,55 @@
+name: Bug report
+description: Something does not work as described.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please do not include real financial data; use made-up amounts.
+        For security issues, use the private report form in the Security tab instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Create a workspace in BRL with a starting balance of 100.00
+        2. Add a monthly expense of 30.00 starting today
+        3. Ask the agent for next month's summary
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where did it happen?
+      options:
+        - MCP connector (through an AI agent)
+        - HTTP API
+        - Account pages (sign-up, login, consent)
+        - Self-hosting (Docker, compose, configuration)
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: AI agent and version (if MCP)
+      placeholder: e.g. Claude desktop app, Claude Code 2.x, Cursor
+  - type: input
+    id: version
+    attributes:
+      label: Horizon Money version or commit
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Server logs are JSON lines and never contain amounts or descriptions, but double-check before pasting.
+      render: shell
