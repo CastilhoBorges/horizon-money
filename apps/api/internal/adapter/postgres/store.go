@@ -32,8 +32,29 @@ func NewStore(pool *pgxpool.Pool, logger *slog.Logger) *Store {
 	return &Store{pool: pool, logger: logger}
 }
 
+var _ port.Store = (*Store)(nil)
+
 // Repositories binds every repository to the pool.
 func (s *Store) Repositories() port.Repositories { return s.repositories(s.pool) }
+
+// InTx runs fn with repositories bound to one transaction. It commits when fn returns nil and rolls
+// everything back otherwise, returning fn's error as is.
+func (s *Store) InTx(ctx context.Context, fn func(port.Repositories) error) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "postgres.store.begin.failed", "error", err)
+		return fmt.Errorf("postgres begin: %w", err)
+	}
+	defer func() { _ = tx.Rollback(context.WithoutCancel(ctx)) }()
+	if err := fn(s.repositories(tx)); err != nil {
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		s.logger.ErrorContext(ctx, "postgres.store.commit.failed", "error", err)
+		return fmt.Errorf("postgres commit: %w", err)
+	}
+	return nil
+}
 
 // conn is a pool or a transaction: both run queries and can open a (nested) transaction.
 type conn interface {

@@ -105,6 +105,13 @@ type Movements interface {
 	ForLedger(ctx context.Context, userID, workspaceID domain.ID, start, to domain.Date) ([]domain.Movement, map[domain.ID][]domain.OccurrenceEdit, error)
 }
 
+// Store hands out the repositories. InTx runs several repository calls in one transaction: it commits
+// when fn returns nil and rolls everything back otherwise.
+type Store interface {
+	Repositories() Repositories
+	InTx(ctx context.Context, fn func(Repositories) error) error
+}
+
 // Repositories are every repository, bound to one connection or one transaction.
 type Repositories struct {
 	Users       Users

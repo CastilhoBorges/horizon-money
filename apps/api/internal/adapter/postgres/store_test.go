@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"log/slog"
 	"os"
 	"sync"
@@ -94,4 +95,37 @@ func newUser(t *testing.T, repos port.Repositories) domain.ID {
 		t.Fatalf("create user: %v", err)
 	}
 	return u.ID
+}
+
+func TestStore_InTxCommitsOrRollsBackEverything(t *testing.T) {
+	t.Parallel()
+
+	store := newStore(t)
+	userID := newUser(t, store.Repositories())
+	ctx := t.Context()
+	failure := errors.New("the use case gave up")
+
+	var discarded domain.Workspace
+	err := store.InTx(ctx, func(repos port.Repositories) error {
+		discarded = newWorkspace(t, repos, userID, "Discarded")
+		create(t, repos, userID, oneOff(t, discarded, nov03, domain.TypeDaily, 100))
+		return failure
+	})
+	if !errors.Is(err, failure) {
+		t.Fatalf("InTx error = %v, want the callback's error", err)
+	}
+	if _, err := store.Repositories().Workspaces.Get(ctx, userID, discarded.ID); !errors.Is(err, port.ErrNotFound) {
+		t.Errorf("workspace written in a failed transaction: Get error = %v, want %v", err, port.ErrNotFound)
+	}
+
+	var kept domain.Workspace
+	if err := store.InTx(ctx, func(repos port.Repositories) error {
+		kept = newWorkspace(t, repos, userID, "Kept")
+		return nil
+	}); err != nil {
+		t.Fatalf("InTx error = %v", err)
+	}
+	if _, err := store.Repositories().Workspaces.Get(ctx, userID, kept.ID); err != nil {
+		t.Errorf("workspace written in a committed transaction: Get error = %v", err)
+	}
 }
