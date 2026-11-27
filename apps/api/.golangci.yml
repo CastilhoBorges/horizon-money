@@ -1,0 +1,179 @@
+# golangci-lint v2 — source of truth for Go lint rules.
+# Based on the golang-lint skill's recommended config, with project rules added at the bottom.
+version: "2"
+
+run:
+  concurrency: 4
+  timeout: 5m
+  tests: true
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 50
+
+linters:
+  enable:
+    # correctness
+    - govet
+    - staticcheck
+    - unused
+    - errcheck
+    - errorlint
+    - nilerr
+    - forcetypeassert
+    - copyloopvar
+    - durationcheck
+    - reassign
+    # style
+    - gocritic
+    - revive
+    - whitespace
+    - godot
+    - misspell
+    - dupword
+    - predeclared
+    - errname
+    - asciicheck
+    # complexity
+    - gocyclo
+    - nestif
+    - funlen
+    - dupl
+    # performance
+    - perfsprint
+    - unconvert
+    - ineffassign
+    - goconst
+    # security and resources
+    - gosec
+    - bidichk
+    - bodyclose
+    - noctx
+    - containedctx
+    - fatcontext
+    - sqlclosecheck
+    - rowserrcheck
+    # logging
+    - sloglint
+    - loggercheck
+    # testing
+    - thelper
+    - usetesting
+    - paralleltest
+    # modernization and meta
+    - modernize
+    - exptostd
+    - intrange
+    - usestdlibvars
+    - exhaustive
+    - nolintlint
+    # project rules (see the bottom of this file)
+    - forbidigo
+    - depguard
+
+  disable:
+    - wsl_v5 # blank-line rules create churn for little value in this codebase
+    - testifylint # the project does not use testify
+    - lll
+    - prealloc
+    - wrapcheck
+    - err113
+    - mnd
+    - iface
+    - nakedret
+    - noinlineerr
+    - gocognit
+    - cyclop
+    - goheader
+    - importas
+    - funcorder
+    - godoclint
+    - varnamelen
+    - exhaustruct
+    - gochecknoglobals
+    - gochecknoinits
+    - unparam
+    - makezero
+    - testpackage
+    - embeddedstructfieldcheck
+    - iotamixing
+    - unqueryvet
+    - recvcheck
+    - mirror
+    - protogetter
+    - spancheck
+    - zerologlint
+
+  settings:
+    dupl:
+      threshold: 100
+    errcheck:
+      check-type-assertions: true
+    funlen:
+      lines: 120
+      statements: 80
+    goconst:
+      min-len: 3
+      min-occurrences: 4
+    gocyclo:
+      min-complexity: 13
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+
+    # Golden rule 9: the domain and the use cases never read the wall clock; time comes from the Clock port.
+    forbidigo:
+      forbid:
+        - pattern: ^time\.Now$
+          msg: use the Clock port; domain and app code must not read the wall clock
+      analyze-types: true
+
+    # Hexagonal boundaries: the domain is pure, and use cases depend on ports, never on adapters.
+    depguard:
+      rules:
+        domain:
+          files:
+            - "**/internal/domain/**"
+          deny:
+            - pkg: github.com/CastilhoBorges/horizon-money/apps/api/internal/adapter
+              desc: the domain must not depend on adapters
+            - pkg: github.com/CastilhoBorges/horizon-money/apps/api/internal/app
+              desc: the domain must not depend on use cases
+            - pkg: net/http
+              desc: the domain must not do I/O
+            - pkg: database/sql
+              desc: the domain must not do I/O
+            - pkg: github.com/jackc
+              desc: the domain must not do I/O
+        app:
+          files:
+            - "**/internal/app/**"
+          deny:
+            - pkg: github.com/CastilhoBorges/horizon-money/apps/api/internal/adapter
+              desc: use cases depend on ports, not on adapters
+            - pkg: github.com/jackc
+              desc: use cases depend on ports, not on the database driver
+
+  exclusions:
+    paths:
+      - vendor$
+      - third_party$
+    rules:
+      # The wall-clock rule only applies to the domain and the use cases.
+      - path-except: internal/(domain|app)/
+        linters:
+          - forbidigo
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  settings:
+    gofumpt:
+      extra:
+        group-params: true
+        clothe-returns: true
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
