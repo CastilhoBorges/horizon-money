@@ -177,3 +177,61 @@ func (l Ledger) status(balance Amount) Status {
 		return StatusOK
 	}
 }
+
+// NewLedger builds a workspace's ledger up to the date to from its stored records: the daily value of its
+// forecast categories, its one-offs dated from D0 through to, each series expanded over that range with
+// its occurrence edits, and its side of each transfer. Records of other workspaces are ignored, and a
+// corrupt series is an error, never a wrong balance.
+func NewLedger(w Workspace, categories []ForecastCategory, movements []Movement, edits map[ID][]OccurrenceEdit, transfers []Transfer, to Date) (Ledger, error) {
+	monthly := make([]Amount, 0, len(categories))
+	for _, c := range categories {
+		monthly = append(monthly, c.MonthlyAmount)
+	}
+	daily, err := DailyValue(monthly, w.ForecastDivisor)
+	if err != nil {
+		return Ledger{}, err
+	}
+	l := Ledger{Start: w.Start, InitialBalance: w.InitialBalance, DailyForecast: daily, LowThreshold: w.LowThreshold}
+
+	for _, m := range movements {
+		if m.WorkspaceID != w.ID {
+			continue
+		}
+		if m.Series == nil {
+			if inRange(m.Entry.Date, w.Start, to) {
+				l.Entries = append(l.Entries, m.Entry)
+			}
+			continue
+		}
+		if err := m.Series.Validate(); err != nil {
+			return Ledger{}, err
+		}
+		for _, o := range m.Series.Expand(w.Start, to, exceptionsOf(edits[m.ID])) {
+			l.Entries = append(l.Entries, Entry{Date: o.Date, Type: m.Series.Type, Amount: o.Amount})
+		}
+	}
+
+	for _, t := range transfers {
+		if !inRange(t.Date, w.Start, to) {
+			continue
+		}
+		switch w.ID {
+		case t.FromWorkspaceID:
+			l.Transfers = append(l.Transfers, TransferLeg{Date: t.Date, Amount: t.AmountSent})
+		case t.ToWorkspaceID:
+			l.Transfers = append(l.Transfers, TransferLeg{Date: t.Date, Amount: t.AmountReceived, Incoming: true})
+		}
+	}
+	return l, nil
+}
+
+func exceptionsOf(edits []OccurrenceEdit) map[Date]Exception {
+	if len(edits) == 0 {
+		return nil
+	}
+	out := make(map[Date]Exception, len(edits))
+	for _, e := range edits {
+		out[e.Original] = e.Exception
+	}
+	return out
+}

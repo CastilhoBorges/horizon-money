@@ -64,3 +64,24 @@ type Transfer struct {
 	Date            Date
 	Description     string
 }
+
+// Movement is a one-off movement or a series, as stored (§4.5). A one-off has Series nil and its date,
+// type and amount in Entry. A series carries them in Series (Start, Type, Amount) and belongs to a group.
+type Movement struct {
+	ID          ID
+	WorkspaceID ID
+	Description string
+	TagIDs      []ID
+	Entry       Entry   // a one-off
+	Series      *Series // a series; nil for a one-off
+	GroupID     ID      // the series group a following split shares; zero for a one-off
+}
+
+// OccurrenceEdit is one changed occurrence of a series, keyed by the date the series produced: a deletion
+// or a full snapshot of the occurrence, its description and tags included (ADR-0012, Decision 5).
+type OccurrenceEdit struct {
+	Original    Date
+	Exception   Exception
+	Description string
+	TagIDs      []ID
+}
