@@ -19,12 +19,12 @@ func TestCheckedDays_SetUnsetAndList(t *testing.T) {
 	w := newWorkspace(t, repos, userID, "Main")
 	ctx := t.Context()
 
-	for _, day := range []string{"2026-11-03", "2026-11-05", "2026-11-05", "2026-12-01"} {
+	for _, day := range []string{nov03, "2026-11-05", "2026-11-05", "2026-12-01"} {
 		if err := repos.CheckedDays.Set(ctx, userID, w.ID, mustDate(t, day)); err != nil {
 			t.Fatalf("Set(%s) error = %v", day, err)
 		}
 	}
-	if err := repos.CheckedDays.Unset(ctx, userID, w.ID, mustDate(t, "2026-11-03")); err != nil {
+	if err := repos.CheckedDays.Unset(ctx, userID, w.ID, mustDate(t, nov03)); err != nil {
 		t.Fatalf("Unset error = %v", err)
 	}
 	if err := repos.CheckedDays.Unset(ctx, userID, w.ID, mustDate(t, "2026-11-20")); err != nil {

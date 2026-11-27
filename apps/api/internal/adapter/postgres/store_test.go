@@ -19,6 +19,12 @@ import (
 	"github.com/CastilhoBorges/horizon-money/apps/api/internal/port"
 )
 
+// Dates several tests share.
+const (
+	nov03 = "2026-11-03"
+	nov06 = "2026-11-06"
+)
+
 // shared is one migrated database for the whole package. Tests isolate their data by creating their own
 // users, so they run in parallel without truncating anything.
 var shared struct {

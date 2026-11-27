@@ -82,11 +82,35 @@ type CheckedDays interface {
 	List(ctx context.Context, userID, workspaceID domain.ID, from, to domain.Date) ([]domain.Date, error)
 }
 
+// Movements stores one-off movements and series, with their tags and occurrence edits. A workspace,
+// movement or tag that is missing or another user's gives ErrNotFound.
+type Movements interface {
+	// Create stores m with its tags and ignores m.ID. A series starts its own group unless m.GroupID
+	// names one, as the tail of a following split does.
+	Create(ctx context.Context, userID domain.ID, m domain.Movement) (domain.Movement, error)
+	Get(ctx context.Context, userID, id domain.ID) (domain.Movement, error)
+	// Update saves the template, the repetition, the group, the description and the tags.
+	Update(ctx context.Context, userID domain.ID, m domain.Movement) error
+	// Delete removes the movement with its tags and occurrence edits.
+	Delete(ctx context.Context, userID, id domain.ID) error
+	// Group lists the movements of a series group by start date, for all edits.
+	Group(ctx context.Context, userID, groupID domain.ID) ([]domain.Movement, error)
+	// PutEdit stores the change of one occurrence, replacing any earlier change of the same occurrence.
+	PutEdit(ctx context.Context, userID, movementID domain.ID, e domain.OccurrenceEdit) error
+	// Edits lists a series' occurrence edits by original date.
+	Edits(ctx context.Context, userID, movementID domain.ID) ([]domain.OccurrenceEdit, error)
+	// ForLedger loads what the workspace's ledger from start through to needs (persistence spec §6): the
+	// one-offs in the range, every series that can produce an occurrence there, and their edits by
+	// movement id. domain.NewLedger turns them into the ledger.
+	ForLedger(ctx context.Context, userID, workspaceID domain.ID, start, to domain.Date) ([]domain.Movement, map[domain.ID][]domain.OccurrenceEdit, error)
+}
+
 // Repositories are every repository, bound to one connection or one transaction.
 type Repositories struct {
 	Users       Users
 	Workspaces  Workspaces
 	Tags        Tags
+	Movements   Movements
 	Transfers   Transfers
 	CheckedDays CheckedDays
 }

@@ -52,3 +52,65 @@ func fromText(s *string) string {
 	}
 	return *s
 }
+
+// toUUIDs maps ids to a uuid[] parameter.
+func toUUIDs(ids []domain.ID) []pgtype.UUID {
+	out := make([]pgtype.UUID, 0, len(ids))
+	for _, id := range ids {
+		out = append(out, toUUID(id))
+	}
+	return out
+}
+
+// fromUUIDs maps a uuid[] column to ids, nil when empty.
+func fromUUIDs(us []pgtype.UUID) []domain.ID {
+	if len(us) == 0 {
+		return nil
+	}
+	out := make([]domain.ID, 0, len(us))
+	for _, u := range us {
+		out = append(out, fromUUID(u))
+	}
+	return out
+}
+
+// toNullUUID maps the zero ID to NULL.
+func toNullUUID(id domain.ID) pgtype.UUID {
+	if id.IsZero() {
+		return pgtype.UUID{}
+	}
+	return toUUID(id)
+}
+
+// toSmallint maps 0 to NULL for the optional smallint columns (anchor day, parts, first part), whose
+// values the domain and the schema keep within 1–360.
+func toSmallint(n int) *int16 {
+	if n == 0 {
+		return nil
+	}
+	v := int16(n) //nolint:gosec // bounded to 1–360 by the domain and the schema checks
+	return &v
+}
+
+func fromSmallint(n *int16) int {
+	if n == nil {
+		return 0
+	}
+	return int(*n)
+}
+
+// toBigint maps 0 to NULL for optional amounts.
+func toBigint(a domain.Amount) *int64 {
+	if a == 0 {
+		return nil
+	}
+	v := int64(a)
+	return &v
+}
+
+func fromBigint(n *int64) domain.Amount {
+	if n == nil {
+		return 0
+	}
+	return domain.Amount(*n)
+}

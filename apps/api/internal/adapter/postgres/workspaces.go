@@ -72,12 +72,12 @@ func (r workspaces) Delete(ctx context.Context, userID, id domain.ID) error {
 }
 
 func (r workspaces) ForecastCategories(ctx context.Context, userID, workspaceID domain.ID) ([]domain.ForecastCategory, error) {
-	if err := r.workspaceExists(ctx, r.q, userID, workspaceID); err != nil {
-		return nil, err
+	if err := workspaceExists(ctx, r.q, userID, workspaceID); err != nil {
+		return nil, r.done(ctx, "list_categories", err, "workspace_id", workspaceID.String())
 	}
 	rows, err := r.q.ListForecastCategories(ctx, sqlcgen.ListForecastCategoriesParams{WorkspaceID: toUUID(workspaceID), UserID: toUUID(userID)})
 	if err != nil {
-		return nil, r.fail(ctx, "list_categories", err, "workspace_id", workspaceID.String())
+		return nil, r.done(ctx, "list_categories", err, "workspace_id", workspaceID.String())
 	}
 	out := make([]domain.ForecastCategory, 0, len(rows))
 	for _, row := range rows {
@@ -87,24 +87,25 @@ func (r workspaces) ForecastCategories(ctx context.Context, userID, workspaceID 
 }
 
 func (r workspaces) ReplaceForecastCategories(ctx context.Context, userID, workspaceID domain.ID, categories []domain.ForecastCategory) error {
-	return r.inTx(ctx, func(q *sqlcgen.Queries) error {
-		if err := r.workspaceExists(ctx, q, userID, workspaceID); err != nil {
+	err := r.inTx(ctx, func(q *sqlcgen.Queries) error {
+		if err := workspaceExists(ctx, q, userID, workspaceID); err != nil {
 			return err
 		}
 		ids := sqlcgen.DeleteForecastCategoriesParams{WorkspaceID: toUUID(workspaceID), UserID: toUUID(userID)}
 		if err := q.DeleteForecastCategories(ctx, ids); err != nil {
-			return r.fail(ctx, "replace_categories", err, "workspace_id", workspaceID.String())
+			return err
 		}
 		for _, c := range categories {
 			err := q.CreateForecastCategory(ctx, sqlcgen.CreateForecastCategoryParams{
 				UserID: toUUID(userID), WorkspaceID: toUUID(workspaceID), Name: c.Name, MonthlyAmount: int64(c.MonthlyAmount),
 			})
 			if err != nil {
-				return r.fail(ctx, "replace_categories", err, "workspace_id", workspaceID.String())
+				return err
 			}
 		}
 		return nil
 	})
+	return r.done(ctx, "replace_categories", err, "workspace_id", workspaceID.String())
 }
 
 func (r workspaces) toWorkspace(ctx context.Context, row sqlcgen.Workspace) (domain.Workspace, error) {

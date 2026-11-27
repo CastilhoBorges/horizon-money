@@ -47,6 +47,7 @@ func (s *Store) repositories(db conn) port.Repositories {
 		Users:       users{base.named("users")},
 		Workspaces:  workspaces{base.named("workspaces")},
 		Tags:        tags{base.named("tags")},
+		Movements:   movements{base.named("movements")},
 		Transfers:   transfers{base.named("transfers")},
 		CheckedDays: checkedDays{base.named("checked_days")},
 	}
@@ -89,11 +90,41 @@ func (r repo) fail(ctx context.Context, operation string, err error, attrs ...an
 	return fmt.Errorf("postgres %s %s: %w", r.entity, operation, err)
 }
 
-// workspaceExists returns ErrNotFound unless the workspace is the user's.
-func (r repo) workspaceExists(ctx context.Context, q *sqlcgen.Queries, userID, workspaceID domain.ID) error {
+// done finishes a repository operation's error handling in one place: ErrNotFound and the domain's rule
+// errors pass through, a foreign-key violation means a referenced record is missing or another user's, and
+// anything else is an unexpected failure, logged once.
+func (r repo) done(ctx context.Context, operation string, err error, attrs ...any) error {
+	var rule *domain.Error
+	switch {
+	case err == nil:
+		return nil
+	case errors.Is(err, port.ErrNotFound), errors.As(err, &rule):
+		return err
+	case violates(err, foreignKeyViolation, ""):
+		return port.ErrNotFound
+	default:
+		return r.fail(ctx, operation, err, attrs...)
+	}
+}
+
+// workspaceExists returns ErrNotFound unless the workspace is the user's. Database errors come back raw,
+// for done to handle.
+func workspaceExists(ctx context.Context, q *sqlcgen.Queries, userID, workspaceID domain.ID) error {
 	exists, err := q.WorkspaceExists(ctx, sqlcgen.WorkspaceExistsParams{ID: toUUID(workspaceID), UserID: toUUID(userID)})
 	if err != nil {
-		return r.fail(ctx, "workspace_exists", err, "workspace_id", workspaceID.String())
+		return err
+	}
+	if !exists {
+		return port.ErrNotFound
+	}
+	return nil
+}
+
+// movementExists returns ErrNotFound unless the movement is the user's. Database errors come back raw.
+func movementExists(ctx context.Context, q *sqlcgen.Queries, userID, movementID domain.ID) error {
+	exists, err := q.MovementExists(ctx, sqlcgen.MovementExistsParams{ID: toUUID(movementID), UserID: toUUID(userID)})
+	if err != nil {
+		return err
 	}
 	if !exists {
 		return port.ErrNotFound
