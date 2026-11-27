@@ -8,14 +8,16 @@ The pure business rules. The package does no I/O and never reads the wall clock 
 | File | Holds |
 |---|---|
 | `errors.go` | `Error{Code}` and every sentinel; the code is what HTTP and MCP return |
+| `id.go` | `ID`, a stored record's UUID, with a strict `ParseID` |
+| `records.go` | the stored records: `User`, `Workspace`, `ForecastCategory`, `Tag`, `Movement`, `OccurrenceEdit`, `Transfer` |
 | `currency.go` | `Currency` and `ParseCurrency`; the minor-unit scale comes from the CLDR currency data in `golang.org/x/text`, which matches ISO 4217 for BRL and the PTAX currencies |
 | `amount.go` | `Amount` (`int64` minor units), `MaxAmount`, `ParseAmount` and `Format` for decimal strings |
 | `date.go`, `month.go` | `Date` (a calendar date, midnight UTC inside), `Month`, and `Today(now, timezone)` |
 | `rounding.go` | every rounding rule: floor plus remainder, half-up, and a 128-bit multiply-divide |
 | `movement.go` | the five `MovementType` values |
-| `series.go` | `Series`, `Occurrence`, `Exception`: recurrence, installments and following splits |
+| `series.go` | `Series`, `Occurrence`, `Exception`: recurrence, installments, following splits, and `Validate` for rows read back |
 | `forecast.go` | `DailyValue`, the daily forecast |
-| `ledger.go` | `Ledger`, `Day` and `Status`: the day-by-day balance and the horizon |
+| `ledger.go` | `Ledger`, `Day` and `Status`: the day-by-day balance and the horizon; `NewLedger` builds a ledger from stored records |
 | `summary.go` | `Calculations`, `MonthSummary` and `YearSummary`: the four calculations and their labels |
 
 The `Clock` port lives in `internal/port/clock.go`. A use case asks it for the instant, and `domain.Today`

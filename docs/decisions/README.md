@@ -18,4 +18,6 @@ One file per decision, never rewritten. A changed decision gets a new ADR that s
 | [0011](0011-account-pages-rendered-by-go.md) | Account pages rendered by the Go server | Accepted |
 | [0012](0012-domain-calculation-details.md) | Calculation details the domain spec leaves open | Accepted |
 | [0013](0013-postgresql-19.md) | PostgreSQL 19 | Accepted |
+| [0014](0014-uuidv7-ids-and-per-user-ownership-keys.md) | UUIDv7 ids and per-user ownership keys | Accepted |
+| [0015](0015-integration-tests-on-a-shared-postgres.md) | Integration tests on a shared Postgres, not testcontainers | Accepted |
 <!-- index:end -->
