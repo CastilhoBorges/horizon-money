@@ -86,6 +86,15 @@ func TestLedger_Days_AcceptanceFixture(t *testing.T) {
 	}
 }
 
+func TestLedger_Days_FromAfterD0(t *testing.T) {
+	t.Parallel()
+
+	days := acceptanceLedger(t).Days(date(t, "2026-12-01"), date(t, "2026-12-02"), date(t, nov27))
+	if len(days) != 2 || days[0].End != 125577 || days[1].End != 121410 {
+		t.Errorf("Days(Dec 1..2) = %+v, want ends 125577 and 121410, built up from D0", days)
+	}
+}
+
 func TestLedger_Days_ForecastCutOff(t *testing.T) {
 	t.Parallel()
 

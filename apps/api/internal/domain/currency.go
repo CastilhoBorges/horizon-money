@@ -8,8 +8,8 @@ type Currency struct {
 	scale int
 }
 
-// ParseCurrency reads an ISO 4217 code, in any letter case. The minor-unit scale comes from the ISO 4217
-// data in golang.org/x/text: BRL, USD and CAD have 2 decimals, JPY 0 and KWD 3.
+// ParseCurrency reads an ISO 4217 code, in any letter case. The minor-unit scale comes from the CLDR
+// currency data in golang.org/x/text: BRL, USD and CAD have 2 decimals, JPY 0 and KWD 3.
 func ParseCurrency(code string) (Currency, error) {
 	unit, err := currency.ParseISO(code)
 	// x/text maps "XXX" (no currency) to the zero Unit without an error.

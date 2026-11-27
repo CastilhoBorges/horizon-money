@@ -98,13 +98,11 @@ type flows struct {
 // Days is the balance table between the from and to dates, inclusive (§4.9). It never starts before D0, and entries and
 // legs dated before D0 are ignored. The forecast applies to days after today, from D0 on.
 func (l Ledger) Days(from, to, today Date) []Day {
-	if from.Before(l.Start) {
-		from = l.Start
-	}
+	from = later(from, l.Start)
 	if to.Before(from) {
 		return nil
 	}
-	byDate := l.flowsByDate(to)
+	byDate := l.flowsBetween(l.Start, to)
 
 	out := make([]Day, 0, to.DaysSince(from)+1)
 	balance := l.InitialBalance
@@ -131,18 +129,20 @@ func (l Ledger) Horizon(first Month, months int, today Date) ([]Day, error) {
 	return l.Days(first.First(), first.Add(months-1).Last(), today), nil
 }
 
-// flowsByDate groups the entries and legs dated from D0 through to.
-func (l Ledger) flowsByDate(to Date) map[Date]flows {
+// flowsBetween groups by date the entries and legs dated between from and to, inclusive. It is the one
+// place that drops what is dated before D0, so the balance table and the summaries count the same money.
+func (l Ledger) flowsBetween(from, to Date) map[Date]flows {
+	from = later(from, l.Start)
 	byDate := make(map[Date]flows)
 	for _, e := range l.Entries {
-		if inRange(e.Date, l.Start, to) {
+		if inRange(e.Date, from, to) {
 			f := byDate[e.Date]
 			f.totals.add(e.Type, e.Amount)
 			byDate[e.Date] = f
 		}
 	}
 	for _, leg := range l.Transfers {
-		if inRange(leg.Date, l.Start, to) {
+		if inRange(leg.Date, from, to) {
 			f := byDate[leg.Date]
 			if leg.Incoming {
 				f.in += leg.Amount

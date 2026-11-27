@@ -124,20 +124,10 @@ func (s *sums) add(o sums) {
 
 func (l Ledger) monthSums(m Month, today Date) sums {
 	var s sums
-	for _, e := range l.Entries {
-		if m.Contains(e.Date) && !e.Date.Before(l.Start) {
-			s.totals.add(e.Type, e.Amount)
-		}
-	}
-	for _, leg := range l.Transfers {
-		if !m.Contains(leg.Date) || leg.Date.Before(l.Start) {
-			continue
-		}
-		if leg.Incoming {
-			s.in += leg.Amount
-		} else {
-			s.out += leg.Amount
-		}
+	for _, f := range l.flowsBetween(m.First(), m.Last()) {
+		s.totals.sum(f.totals)
+		s.in += f.in
+		s.out += f.out
 	}
 	for d := m.First(); !d.After(m.Last()); d = d.AddDays(1) {
 		if l.hasForecast(d, today) {
@@ -155,10 +145,7 @@ func (l Ledger) elapsedDays(m Month, today Date) int {
 	if m.First().After(today) {
 		return 0
 	}
-	first, last := m.First(), m.Last()
-	if l.Start.After(first) {
-		first = l.Start
-	}
+	first, last := later(m.First(), l.Start), m.Last()
 	if m.Contains(today) {
 		last = today
 	}

@@ -437,3 +437,79 @@ func TestSeries_SplitAtInstallments(t *testing.T) {
 		t.Errorf("SplitAt(after the last part) error = %v, want %v", err, domain.ErrNotAnOccurrence)
 	}
 }
+
+func TestSeries_WithStart(t *testing.T) {
+	t.Parallel()
+
+	rent := recurring(t, domain.FrequencyMonthly, 1000, "2026-01-05", "")
+	_, tail, err := rent.SplitAt(date(t, "2026-12-05"))
+	if err != nil {
+		t.Fatalf("SplitAt error = %v", err)
+	}
+	moved, err := tail.WithStart(date(t, "2026-12-10"))
+	if err != nil {
+		t.Fatalf("WithStart error = %v", err)
+	}
+	got := dates(moved.Expand(date(t, "2026-12-01"), date(t, "2027-02-28"), nil))
+	if want := []string{"2026-12-10", "2027-01-10", "2027-02-10"}; !slices.Equal(got, want) {
+		t.Errorf("rent moved to the 10th from December = %v, want %v", got, want)
+	}
+
+	_, purchase, err := installments(t, 10000, 3, jan10).SplitAt(date(t, feb10))
+	if err != nil {
+		t.Fatalf("SplitAt error = %v", err)
+	}
+	movedParts, err := purchase.WithStart(date(t, "2026-02-20"))
+	if err != nil {
+		t.Fatalf("WithStart error = %v", err)
+	}
+	gotParts := parts(movedParts.Expand(date(t, "2026-01-01"), date(t, dec31), nil))
+	if want := []part{{"2026-02-20", 2, 3333}, {"2026-03-20", 3, 3334}}; !slices.Equal(gotParts, want) {
+		t.Errorf("installments moved to the 20th = %v, want the numbering kept: %v", gotParts, want)
+	}
+
+	toMonthEnd, err := recurring(t, domain.FrequencyMonthly, 1000, jan10, "").WithStart(date(t, jan31))
+	if err != nil {
+		t.Fatalf("WithStart error = %v", err)
+	}
+	if got := dates(toMonthEnd.Expand(date(t, "2026-01-01"), date(t, mar31), nil)); !slices.Equal(got, []string{jan31, feb28, mar31}) {
+		t.Errorf("series moved to the 31st = %v, want [%s %s %s]", got, jan31, feb28, mar31)
+	}
+
+	ending := recurring(t, domain.FrequencyDaily, 1000, nov01, nov30)
+	if _, err := ending.WithStart(date(t, "2026-12-01")); !errors.Is(err, domain.ErrEndBeforeStart) {
+		t.Errorf("WithStart after the end error = %v, want %v", err, domain.ErrEndBeforeStart)
+	}
+	if _, err := ending.WithStart(domain.Date{}); !errors.Is(err, domain.ErrInvalidDate) {
+		t.Errorf("WithStart(zero date) error = %v, want %v", err, domain.ErrInvalidDate)
+	}
+}
+
+func TestSeries_ExpandInstallmentsWithOverride(t *testing.T) {
+	t.Parallel()
+
+	exceptions := map[domain.Date]domain.Exception{date(t, mar10): {Date: date(t, "2026-04-02"), Amount: 5000}}
+	got := parts(installments(t, 10000, 3, jan10).Expand(date(t, "2026-01-01"), date(t, dec31), exceptions))
+	if want := []part{{jan10, 1, 3333}, {feb10, 2, 3333}, {"2026-04-02", 3, 5000}}; !slices.Equal(got, want) {
+		t.Errorf("Expand = %v, want the moved last part still numbered 3/3 with the override's amount: %v", got, want)
+	}
+}
+
+func TestSeries_WithAmountKeepsOverrides(t *testing.T) {
+	t.Parallel()
+
+	exceptions := map[domain.Date]domain.Exception{date(t, feb10): {Date: date(t, "2026-02-12"), Amount: 120000}}
+	edited, err := recurring(t, domain.FrequencyMonthly, 100000, jan10, "").WithAmount(5000)
+	if err != nil {
+		t.Fatalf("WithAmount error = %v", err)
+	}
+	got := edited.Expand(date(t, "2026-02-01"), date(t, apr30), exceptions)
+	want := []domain.Occurrence{
+		{Date: date(t, "2026-02-12"), Original: date(t, feb10), Amount: 120000},
+		{Date: date(t, mar10), Original: date(t, mar10), Amount: 5000},
+		{Date: date(t, apr10), Original: date(t, apr10), Amount: 5000},
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("Expand after an all edit = %+v, want the individually edited occurrence kept: %+v", got, want)
+	}
+}

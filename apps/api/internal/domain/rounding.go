@@ -34,11 +34,11 @@ func mulDivHalfUp(a, b, d int64) int64 {
 		return math.MaxInt64
 	}
 	quotient, remainder := bits.Div64(hi, lo, divisor)
+	if quotient >= math.MaxInt64 {
+		return math.MaxInt64
+	}
 	if remainder >= divisor-remainder {
 		quotient++
-	}
-	if quotient > math.MaxInt64 {
-		return math.MaxInt64
 	}
 	return int64(quotient)
 }

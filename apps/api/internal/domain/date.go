@@ -73,6 +73,14 @@ func (d Date) Before(o Date) bool { return d.t.Before(o.t) }
 // After reports whether d is later than o.
 func (d Date) After(o Date) bool { return d.t.After(o.t) }
 
+// later is the later of two dates.
+func later(a, b Date) Date {
+	if a.After(b) {
+		return a
+	}
+	return b
+}
+
 // IsWeekend reports whether the date is a Saturday or a Sunday.
 func (d Date) IsWeekend() bool {
 	weekday := d.t.Weekday()

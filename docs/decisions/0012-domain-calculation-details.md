@@ -14,7 +14,7 @@ the status boundary, how rates round, what happens around D0, and how series edi
 ## Decision
 1. **Low status.** A day is `low` when `0 ≤ end < low_balance_threshold`. With the default threshold of 0,
    a day is never `low`.
-2. **Savings rate.** It is stored in basis points (27.14% = `2714`), rounded half-up. The target band is
+2. **Savings rate.** It is expressed in basis points (27.14% = `2714`), rounded half-up. The target band is
    compared on that rounded value, so the label always matches the number shown.
 3. **Average daily.** It is rounded half-up to the minor unit.
 4. **D0.** The balance table never returns days before D0. Any balance before D0 is the initial balance.

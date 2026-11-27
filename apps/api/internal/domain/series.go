@@ -164,6 +164,20 @@ func (s Series) WithAmount(a Amount) (Series, error) {
 	return s, nil
 }
 
+// WithStart moves the series so its first occurrence falls on d, for a following or all edit that changes
+// the date. A monthly series or an installment then falls on d's day of the month. Installments keep their
+// part numbers: the part that fell on Start now falls on d.
+func (s Series) WithStart(d Date) (Series, error) {
+	if d.IsZero() {
+		return Series{}, ErrInvalidDate
+	}
+	if !s.End.IsZero() && s.End.Before(d) {
+		return Series{}, ErrEndBeforeStart
+	}
+	s.Start, s.AnchorDay = d, d.Day()
+	return s, nil
+}
+
 func (s Series) occurrence(at, original Date, amount Amount) Occurrence {
 	o := Occurrence{Date: at, Original: original, Amount: amount}
 	if s.Frequency == FrequencyInstallments {
@@ -201,10 +215,7 @@ func (s Series) lastDate() (last Date, ok bool) {
 // ruleDates lists the dates the series produces between from and to, inclusive, without walking the
 // days before from.
 func (s Series) ruleDates(from, to Date) []Date {
-	lo, hi := s.Start, to
-	if from.After(lo) {
-		lo = from
-	}
+	lo, hi := later(s.Start, from), to
 	if last, ok := s.lastDate(); ok && last.Before(hi) {
 		hi = last
 	}

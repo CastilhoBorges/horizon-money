@@ -3,6 +3,7 @@ package domain_test
 import (
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"testing"
 
@@ -159,6 +160,19 @@ func TestLedger_MonthSummary_LargeSums(t *testing.T) {
 	got := ledger.MonthSummary(month(t, "2026-11"), date(t, nov01), target)
 	if got.SavingsRate == nil || *got.SavingsRate != 5000 {
 		t.Errorf("savings rate %s, want 5000 without overflowing", show(got.Calculations))
+	}
+}
+
+func TestLedger_MonthSummary_SaturatedRate(t *testing.T) {
+	t.Parallel()
+
+	ledger := domain.Ledger{Start: date(t, nov01), Entries: []domain.Entry{
+		entry(t, nov01, domain.TypeIncome, 229),
+		entry(t, nov01, domain.TypeSaving, 422430439287948732),
+	}}
+	got := ledger.MonthSummary(month(t, "2026-11"), date(t, nov01), target)
+	if got.SavingsRate == nil || *got.SavingsRate != math.MaxInt64 || got.SavingsBand != domain.BandAbove {
+		t.Errorf("savings %s band %q, want the rate saturated at MaxInt64 and above the band", show(got.Calculations), got.SavingsBand)
 	}
 }
 

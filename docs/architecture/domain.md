@@ -8,7 +8,7 @@ The pure business rules. The package does no I/O and never reads the wall clock 
 | File | Holds |
 |---|---|
 | `errors.go` | `Error{Code}` and every sentinel; the code is what HTTP and MCP return |
-| `currency.go` | `Currency` and `ParseCurrency`; the minor-unit scale comes from ISO 4217 data in `golang.org/x/text` |
+| `currency.go` | `Currency` and `ParseCurrency`; the minor-unit scale comes from the CLDR currency data in `golang.org/x/text`, which matches ISO 4217 for BRL and the PTAX currencies |
 | `amount.go` | `Amount` (`int64` minor units), `MaxAmount`, `ParseAmount` and `Format` for decimal strings |
 | `date.go`, `month.go` | `Date` (a calendar date, midnight UTC inside), `Month`, and `Today(now, timezone)` |
 | `rounding.go` | every rounding rule: floor plus remainder, half-up, and a 128-bit multiply-divide |
@@ -32,8 +32,9 @@ turns that instant into the user's calendar date.
 3. It asks the ledger: `Days`, `Horizon`, `MonthSummary` or `YearSummary`.
 
 `Days` walks from D0 and never returns a day before it. The forecast counts only on days after today, from
-D0 on. A monthly and a yearly summary derive every field from the same sums (totals, transfers, forecast
-days, elapsed days). That is what keeps the §4.10 balance identity true, and a test checks it month by month.
+D0 on. `Days` and the summaries read the same flows. `flowsBetween` is the one place that drops what is
+dated before D0, and `hasForecast` is the one forecast rule. That is what keeps the §4.10 balance identity
+true, and a test checks it month by month. A yearly summary derives its totals from the sums of its months.
 
 ## Series model
 
@@ -45,7 +46,8 @@ days, elapsed days). That is what keeps the §4.10 balance identity true, and a 
   it with a full snapshot (date and amount). An override moved into a range appears there, and one moved
   out disappears.
 - `SplitAt(at)` serves a `following` edit. The head ends the day before, and the tail starts at `at`
-  keeping the anchor day and continuing the part numbers. `WithAmount` then sets the new value per part.
+  keeping the anchor day and continuing the part numbers. `WithAmount` then sets the new value per part,
+  and `WithStart` moves the date (and the anchor day) while keeping the part numbers.
 
 How series rows, series groups and exceptions are stored belongs to the persistence adapter (#8).
 
