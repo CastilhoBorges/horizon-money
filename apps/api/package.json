@@ -3,9 +3,11 @@
   "private": true,
   "description": "Horizon Money server (Go): HTTP API, MCP server and account pages.",
   "scripts": {
-    "dev": "go run ./cmd/horizon-money serve",
+    "dev": "node ../../scripts/with-env.mjs go run ./cmd/horizon-money serve",
     "build": "go build -trimpath -o bin/horizon-money ./cmd/horizon-money",
     "test": "go test -race ./...",
+    "test:integration": "node ../../scripts/with-env.mjs --require TEST_DATABASE_URL go test -race -count=1 -shuffle=on -tags=integration ./...",
+    "gen": "docker run --rm --user \"$(id -u):$(id -g)\" -v \"$PWD\":/src -w /src sqlc/sqlc:1.31.1@sha256:70f53171d27b2424e9358869975455a6e955a5aa8e58a998a270a6e34e525537 generate",
     "lint": "golangci-lint run ./...",
     "format": "golangci-lint fmt ./..."
   }

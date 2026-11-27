@@ -12,10 +12,12 @@
     "build": "turbo run build",
     "test": "turbo run test",
     "test:integration": "turbo run test:integration",
+    "gen": "turbo run gen",
     "lint": "turbo run lint",
     "format": "turbo run format",
     "db:up": "docker compose --profile dev up -d postgres mailpit",
     "db:down": "docker compose --profile dev down",
+    "db:worktree": "node scripts/db-worktree.mjs",
     "docs:index": "node scripts/docs-index.mjs",
     "docs:check": "node scripts/docs-index.mjs --check",
     "test:tooling": "node --test \"scripts/*.test.mjs\" \".claude/hooks/*.test.mjs\""
