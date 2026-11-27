@@ -1,0 +1,23 @@
+{
+  "name": "horizon-money",
+  "private": true,
+  "description": "Open-source, self-hosted personal-finance forecasting you connect to your AI agent through MCP.",
+  "license": "MIT",
+  "packageManager": "pnpm@12.18.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:integration": "turbo run test:integration",
+    "lint": "turbo run lint",
+    "format": "turbo run format",
+    "db:up": "docker compose --profile dev up -d postgres mailpit",
+    "db:down": "docker compose --profile dev down"
+  },
+  "devDependencies": {
+    "turbo": "2.11.13"
+  }
+}

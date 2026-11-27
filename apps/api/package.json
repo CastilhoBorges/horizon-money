@@ -1,0 +1,12 @@
+{
+  "name": "@horizon-money/api",
+  "private": true,
+  "description": "Horizon Money server (Go): HTTP API, MCP server and account pages.",
+  "scripts": {
+    "dev": "go run ./cmd/horizon-money serve",
+    "build": "go build -trimpath -o bin/horizon-money ./cmd/horizon-money",
+    "test": "go test -race ./...",
+    "lint": "golangci-lint run ./...",
+    "format": "golangci-lint fmt ./..."
+  }
+}
