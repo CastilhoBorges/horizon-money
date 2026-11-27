@@ -1,0 +1,48 @@
+# Horizon Money — `docker compose up` runs Postgres and the server.
+# Local development: `pnpm db:up` starts Postgres and Mailpit (the `dev` profile), then `pnpm dev`.
+name: horizon-money
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-horizon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-horizon}
+      POSTGRES_DB: ${POSTGRES_DB:-horizon}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./apps/api
+    image: horizon-money:local
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-horizon}:${POSTGRES_PASSWORD:-horizon}@postgres:5432/${POSTGRES_DB:-horizon}?sslmode=disable
+      PORT: "8080"
+    ports:
+      # Bound to localhost: put a reverse proxy or a tunnel in front to reach it over HTTPS.
+      - "127.0.0.1:${API_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  mailpit:
+    image: axllent/mailpit:latest
+    profiles: ["dev"]
+    ports:
+      - "127.0.0.1:8025:8025" # web inbox
+      - "127.0.0.1:1025:1025" # SMTP
+
+volumes:
+  pgdata:
