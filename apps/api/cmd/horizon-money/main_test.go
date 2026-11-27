@@ -5,6 +5,7 @@ import (
 	"context"
 	"net"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -31,6 +32,21 @@ func TestRunRejectsUnknownCommand(t *testing.T) {
 	err := run(context.Background(), []string{"bogus"}, func(string) string { return "" }, &out)
 	if err == nil {
 		t.Fatal("run(bogus) error = nil, want an error")
+	}
+}
+
+func TestRunRequiresDatabaseURL(t *testing.T) {
+	t.Parallel()
+
+	for _, command := range []string{"migrate"} {
+		t.Run(command, func(t *testing.T) {
+			t.Parallel()
+
+			err := run(context.Background(), []string{command}, func(string) string { return "" }, &bytes.Buffer{})
+			if err == nil || !strings.Contains(err.Error(), "DATABASE_URL") {
+				t.Fatalf("run(%s) without DATABASE_URL error = %v, want one naming DATABASE_URL", command, err)
+			}
+		})
 	}
 }
 

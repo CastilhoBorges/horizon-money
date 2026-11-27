@@ -2,7 +2,8 @@
 //
 // Usage:
 //
-//	horizon-money [serve]      start the HTTP + MCP server (default)
+//	horizon-money [serve]      migrate the database, then start the HTTP + MCP server (default)
+//	horizon-money migrate      apply pending database migrations and exit
 //	horizon-money healthcheck  exit 0 when the local server answers /healthz
 package main
 
@@ -20,7 +21,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/CastilhoBorges/horizon-money/apps/api/internal/adapter/httpapi"
+	"github.com/CastilhoBorges/horizon-money/apps/api/internal/adapter/postgres"
 	"github.com/CastilhoBorges/horizon-money/apps/api/internal/config"
 )
 
@@ -56,15 +60,43 @@ func run(ctx context.Context, args []string, getenv func(string) string, stdout 
 	switch command {
 	case "serve":
 		return serve(ctx, cfg, stdout)
+	case "migrate":
+		return migrate(ctx, cfg, stdout)
 	case "healthcheck":
 		return healthcheck(ctx, cfg)
 	default:
-		return fmt.Errorf("unknown command %q (want serve or healthcheck)", command)
+		return fmt.Errorf("unknown command %q (want serve, migrate or healthcheck)", command)
 	}
 }
 
+func newLogger(cfg config.Config, stdout io.Writer) *slog.Logger {
+	return slog.New(slog.NewJSONHandler(stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
+}
+
+// openDatabase connects to DATABASE_URL, which serve and migrate require.
+func openDatabase(ctx context.Context, cfg config.Config) (*pgxpool.Pool, error) {
+	if cfg.DatabaseURL == "" {
+		return nil, errors.New("DATABASE_URL is required")
+	}
+	return postgres.Connect(ctx, cfg.DatabaseURL)
+}
+
+// migrate applies the pending migrations and exits.
+func migrate(ctx context.Context, cfg config.Config, stdout io.Writer) error {
+	pool, err := openDatabase(ctx, cfg)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+	if err := postgres.Migrate(ctx, pool); err != nil {
+		return err
+	}
+	newLogger(cfg, stdout).Info("db.migrate.applied")
+	return nil
+}
+
 func serve(ctx context.Context, cfg config.Config, stdout io.Writer) error {
-	logger := slog.New(slog.NewJSONHandler(stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
+	logger := newLogger(cfg, stdout)
 
 	server := &http.Server{
 		Addr:              net.JoinHostPort("", strconv.Itoa(cfg.Port)),
