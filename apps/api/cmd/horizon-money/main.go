@@ -98,6 +98,17 @@ func migrate(ctx context.Context, cfg config.Config, stdout io.Writer) error {
 func serve(ctx context.Context, cfg config.Config, stdout io.Writer) error {
 	logger := newLogger(cfg, stdout)
 
+	// The server never runs on a half-migrated schema: a migration failure stops it here.
+	pool, err := openDatabase(ctx, cfg)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+	if err := postgres.Migrate(ctx, pool); err != nil {
+		return err
+	}
+	logger.Info("db.migrate.applied")
+
 	server := &http.Server{
 		Addr:              net.JoinHostPort("", strconv.Itoa(cfg.Port)),
 		Handler:           httpapi.NewRouter(),

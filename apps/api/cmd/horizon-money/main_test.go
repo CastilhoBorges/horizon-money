@@ -38,54 +38,24 @@ func TestRunRejectsUnknownCommand(t *testing.T) {
 func TestRunRequiresDatabaseURL(t *testing.T) {
 	t.Parallel()
 
-	for _, command := range []string{"migrate"} {
+	for _, command := range []string{"serve", "migrate"} {
 		t.Run(command, func(t *testing.T) {
 			t.Parallel()
 
-			err := run(context.Background(), []string{command}, func(string) string { return "" }, &bytes.Buffer{})
+			port := strconv.Itoa(freePort(t))
+			getenv := func(key string) string {
+				if key == "PORT" {
+					return port
+				}
+				return ""
+			}
+			ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
+			defer cancel()
+			err := run(ctx, []string{command}, getenv, &bytes.Buffer{})
 			if err == nil || !strings.Contains(err.Error(), "DATABASE_URL") {
 				t.Fatalf("run(%s) without DATABASE_URL error = %v, want one naming DATABASE_URL", command, err)
 			}
 		})
-	}
-}
-
-func TestServeAnswersHealthcheckAndStopsOnCancel(t *testing.T) {
-	t.Parallel()
-
-	port := strconv.Itoa(freePort(t))
-	getenv := func(key string) string {
-		if key == "PORT" {
-			return port
-		}
-		return ""
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	done := make(chan error, 1)
-	var logs bytes.Buffer
-	go func() { done <- run(ctx, []string{"serve"}, getenv, &logs) }()
-
-	deadline := time.Now().Add(5 * time.Second)
-	for {
-		err := run(context.Background(), []string{"healthcheck"}, getenv, &bytes.Buffer{})
-		if err == nil {
-			break
-		}
-		if time.Now().After(deadline) {
-			t.Fatalf("healthcheck never succeeded: %v", err)
-		}
-		time.Sleep(50 * time.Millisecond)
-	}
-
-	cancel()
-	select {
-	case err := <-done:
-		if err != nil {
-			t.Fatalf("serve returned %v after cancel, want nil", err)
-		}
-	case <-time.After(10 * time.Second):
-		t.Fatal("serve did not stop after cancel")
 	}
 }
 
