@@ -6,7 +6,7 @@ One file per decision, never rewritten. A changed decision gets a new ADR that s
 | ADR | Decision | Status |
 |---|---|---|
 | [0001](0001-go-backend-nextjs-frontend.md) | Go backend, Next.js frontend | Accepted |
-| [0002](0002-postgres-pgx-sqlc-goose.md) | PostgreSQL with pgx, sqlc and goose | Accepted |
+| [0002](0002-postgres-pgx-sqlc-goose.md) | PostgreSQL with pgx, sqlc and goose | Accepted. The PostgreSQL version is superseded by [ADR-0013](0013-postgresql-19.md). |
 | [0003](0003-hexagonal-core-lint-enforced.md) | Hexagonal core with lint-enforced boundaries | Accepted |
 | [0004](0004-mcp-server-in-api-binary.md) | MCP server inside the API binary | Accepted |
 | [0005](0005-money-minor-units-decimal-strings.md) | Money as minor units inside, decimal strings at the edge | Accepted |
@@ -17,4 +17,5 @@ One file per decision, never rewritten. A changed decision gets a new ADR that s
 | [0010](0010-built-in-oauth-authorization-server.md) | Built-in OAuth 2.1 authorization server for MCP | Accepted |
 | [0011](0011-account-pages-rendered-by-go.md) | Account pages rendered by the Go server | Accepted |
 | [0012](0012-domain-calculation-details.md) | Calculation details the domain spec leaves open | Accepted |
+| [0013](0013-postgresql-19.md) | PostgreSQL 19 | Accepted |
 <!-- index:end -->

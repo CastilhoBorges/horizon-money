@@ -1,7 +1,7 @@
 # ADR-0002: PostgreSQL with pgx, sqlc and goose
 
 ## Status
-Accepted
+Accepted. The PostgreSQL version is superseded by [ADR-0013](0013-postgresql-19.md).
 
 ## Date
 2026-11-27
