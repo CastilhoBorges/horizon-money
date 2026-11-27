@@ -16,6 +16,11 @@ var (
 	ErrAmountTooLarge  = &Error{Code: "amount.too_large"}
 )
 
+// Ids.
+var (
+	ErrInvalidID = &Error{Code: "id.invalid"}
+)
+
 // Dates and months.
 var (
 	ErrInvalidDate  = &Error{Code: "date.invalid"}
