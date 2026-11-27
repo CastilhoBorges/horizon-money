@@ -33,3 +33,10 @@ var (
 	ErrNotAnOccurrence         = &Error{Code: "series.not_an_occurrence"}
 	ErrSplitAtFirstOccurrence  = &Error{Code: "series.split_at_first_occurrence"}
 )
+
+// Forecast and views.
+var (
+	ErrForecastDivisorOutOfRange = &Error{Code: "workspace.forecast_divisor_out_of_range"}
+	ErrForecastAmountNotPositive = &Error{Code: "forecast.amount_not_positive"}
+	ErrHorizonOutOfRange         = &Error{Code: "horizon.months_out_of_range"}
+)
