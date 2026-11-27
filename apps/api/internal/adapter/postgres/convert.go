@@ -37,3 +37,18 @@ func fromDate(d pgtype.Date) (domain.Date, error) {
 	}
 	return date, nil
 }
+
+// toText maps "" to NULL, for optional text such as descriptions.
+func toText(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func fromText(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}

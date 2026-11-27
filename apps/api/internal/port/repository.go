@@ -49,8 +49,44 @@ type Workspaces interface {
 	ReplaceForecastCategories(ctx context.Context, userID, workspaceID domain.ID, categories []domain.ForecastCategory) error
 }
 
+// NewTag is what creating a tag takes.
+type NewTag struct {
+	Name  string
+	Color domain.TagColor
+}
+
+// Tags stores a user's tags. A name is unique per user, ignoring case (domain.ErrTagNameTaken).
+type Tags interface {
+	Create(ctx context.Context, userID domain.ID, t NewTag) (domain.Tag, error)
+	// List returns the tags sorted by name, ignoring case.
+	List(ctx context.Context, userID domain.ID) ([]domain.Tag, error)
+}
+
+// Transfers stores transfers, one row with both sides. Both workspaces must be the caller's.
+type Transfers interface {
+	// Create ignores t.ID. A workspace that is missing or another user's gives ErrNotFound.
+	Create(ctx context.Context, userID domain.ID, t domain.Transfer) (domain.Transfer, error)
+	Get(ctx context.Context, userID, id domain.ID) (domain.Transfer, error)
+	Delete(ctx context.Context, userID, id domain.ID) error
+	// ListForWorkspace returns the transfers into or out of the workspace dated from..to, inclusive, by
+	// date. A zero from means no lower bound.
+	ListForWorkspace(ctx context.Context, userID, workspaceID domain.ID, from, to domain.Date) ([]domain.Transfer, error)
+}
+
+// CheckedDays stores the display-only "I reviewed this day" marks.
+type CheckedDays interface {
+	// Set marks the day; marking it again changes nothing.
+	Set(ctx context.Context, userID, workspaceID domain.ID, day domain.Date) error
+	// Unset clears the mark; clearing a day never marked changes nothing.
+	Unset(ctx context.Context, userID, workspaceID domain.ID, day domain.Date) error
+	List(ctx context.Context, userID, workspaceID domain.ID, from, to domain.Date) ([]domain.Date, error)
+}
+
 // Repositories are every repository, bound to one connection or one transaction.
 type Repositories struct {
-	Users      Users
-	Workspaces Workspaces
+	Users       Users
+	Workspaces  Workspaces
+	Tags        Tags
+	Transfers   Transfers
+	CheckedDays CheckedDays
 }

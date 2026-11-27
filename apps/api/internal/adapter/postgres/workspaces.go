@@ -72,7 +72,7 @@ func (r workspaces) Delete(ctx context.Context, userID, id domain.ID) error {
 }
 
 func (r workspaces) ForecastCategories(ctx context.Context, userID, workspaceID domain.ID) ([]domain.ForecastCategory, error) {
-	if err := r.mustExist(ctx, r.q, userID, workspaceID); err != nil {
+	if err := r.workspaceExists(ctx, r.q, userID, workspaceID); err != nil {
 		return nil, err
 	}
 	rows, err := r.q.ListForecastCategories(ctx, sqlcgen.ListForecastCategoriesParams{WorkspaceID: toUUID(workspaceID), UserID: toUUID(userID)})
@@ -88,7 +88,7 @@ func (r workspaces) ForecastCategories(ctx context.Context, userID, workspaceID 
 
 func (r workspaces) ReplaceForecastCategories(ctx context.Context, userID, workspaceID domain.ID, categories []domain.ForecastCategory) error {
 	return r.inTx(ctx, func(q *sqlcgen.Queries) error {
-		if err := r.mustExist(ctx, q, userID, workspaceID); err != nil {
+		if err := r.workspaceExists(ctx, q, userID, workspaceID); err != nil {
 			return err
 		}
 		ids := sqlcgen.DeleteForecastCategoriesParams{WorkspaceID: toUUID(workspaceID), UserID: toUUID(userID)}
@@ -105,28 +105,6 @@ func (r workspaces) ReplaceForecastCategories(ctx context.Context, userID, works
 		}
 		return nil
 	})
-}
-
-func (r workspaces) mustExist(ctx context.Context, q *sqlcgen.Queries, userID, id domain.ID) error {
-	exists, err := q.WorkspaceExists(ctx, sqlcgen.WorkspaceExistsParams{ID: toUUID(id), UserID: toUUID(userID)})
-	if err != nil {
-		return r.fail(ctx, "exists", err, "workspace_id", id.String())
-	}
-	if !exists {
-		return port.ErrNotFound
-	}
-	return nil
-}
-
-// affected turns a write that touched no row into ErrNotFound: the id is missing or another user's.
-func (r workspaces) affected(ctx context.Context, operation string, n int64, err error, id domain.ID) error {
-	if err != nil {
-		return r.fail(ctx, operation, err, "workspace_id", id.String())
-	}
-	if n == 0 {
-		return port.ErrNotFound
-	}
-	return nil
 }
 
 func (r workspaces) toWorkspace(ctx context.Context, row sqlcgen.Workspace) (domain.Workspace, error) {

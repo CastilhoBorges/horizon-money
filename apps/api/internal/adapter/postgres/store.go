@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/CastilhoBorges/horizon-money/apps/api/internal/adapter/postgres/sqlcgen"
+	"github.com/CastilhoBorges/horizon-money/apps/api/internal/domain"
 	"github.com/CastilhoBorges/horizon-money/apps/api/internal/port"
 )
 
@@ -43,8 +44,11 @@ type conn interface {
 func (s *Store) repositories(db conn) port.Repositories {
 	base := repo{db: db, q: sqlcgen.New(db), logger: s.logger}
 	return port.Repositories{
-		Users:      users{base.named("users")},
-		Workspaces: workspaces{base.named("workspaces")},
+		Users:       users{base.named("users")},
+		Workspaces:  workspaces{base.named("workspaces")},
+		Tags:        tags{base.named("tags")},
+		Transfers:   transfers{base.named("transfers")},
+		CheckedDays: checkedDays{base.named("checked_days")},
 	}
 }
 
@@ -83,6 +87,29 @@ func (r repo) named(entity string) repo {
 func (r repo) fail(ctx context.Context, operation string, err error, attrs ...any) error {
 	r.logger.ErrorContext(ctx, "postgres."+r.entity+"."+operation+".failed", append(attrs, "error", err)...)
 	return fmt.Errorf("postgres %s %s: %w", r.entity, operation, err)
+}
+
+// workspaceExists returns ErrNotFound unless the workspace is the user's.
+func (r repo) workspaceExists(ctx context.Context, q *sqlcgen.Queries, userID, workspaceID domain.ID) error {
+	exists, err := q.WorkspaceExists(ctx, sqlcgen.WorkspaceExistsParams{ID: toUUID(workspaceID), UserID: toUUID(userID)})
+	if err != nil {
+		return r.fail(ctx, "workspace_exists", err, "workspace_id", workspaceID.String())
+	}
+	if !exists {
+		return port.ErrNotFound
+	}
+	return nil
+}
+
+// affected turns a write that touched no row into ErrNotFound: the id is missing or another user's.
+func (r repo) affected(ctx context.Context, operation string, n int64, err error, id domain.ID) error {
+	if err != nil {
+		return r.fail(ctx, operation, err, "id", id.String())
+	}
+	if n == 0 {
+		return port.ErrNotFound
+	}
+	return nil
 }
 
 func isNoRows(err error) bool { return errors.Is(err, pgx.ErrNoRows) }

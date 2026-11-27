@@ -31,3 +31,36 @@ type ForecastCategory struct {
 	Name          string
 	MonthlyAmount Amount
 }
+
+// TagColor is one of the eight tag colours (§4.4).
+type TagColor string
+
+// The tag colours.
+const (
+	TagGray   TagColor = "gray"
+	TagBlue   TagColor = "blue"
+	TagYellow TagColor = "yellow"
+	TagGreen  TagColor = "green"
+	TagRed    TagColor = "red"
+	TagPurple TagColor = "purple"
+	TagPink   TagColor = "pink"
+	TagBrown  TagColor = "brown"
+)
+
+// Tag is a user's label for movements. It never changes a calculation (§4.4).
+type Tag struct {
+	ID    ID
+	Name  string
+	Color TagColor
+}
+
+// Transfer moves money between two workspaces of the same user, in one row with both sides (§4.6).
+type Transfer struct {
+	ID              ID
+	FromWorkspaceID ID
+	ToWorkspaceID   ID
+	AmountSent      Amount // in the source workspace's currency
+	AmountReceived  Amount // in the destination workspace's currency
+	Date            Date
+	Description     string
+}

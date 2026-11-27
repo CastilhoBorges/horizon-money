@@ -51,4 +51,5 @@ var (
 var (
 	ErrEmailTaken            = &Error{Code: "user.email_taken"}
 	ErrWorkspaceHasTransfers = &Error{Code: "workspace.has_transfers"}
+	ErrTagNameTaken          = &Error{Code: "tag.name_taken"}
 )
