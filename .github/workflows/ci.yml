@@ -66,7 +66,7 @@ jobs:
           node-version: 24
 
       - name: Tooling tests (docs script and agent hooks)
-        run: node --test scripts/ .claude/hooks/
+        run: node --test "scripts/*.test.mjs" ".claude/hooks/*.test.mjs"
 
       - name: Indexes, third-party notices and line limits
         run: node scripts/docs-index.mjs --check
