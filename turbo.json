@@ -12,6 +12,9 @@
     "test:integration": {
       "cache": false
     },
+    "gen": {
+      "cache": false
+    },
     "lint": {
       "outputs": []
     },

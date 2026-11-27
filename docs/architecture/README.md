@@ -7,6 +7,7 @@ This folder describes the code **as it is**. Add one file per area as the area i
 ## Areas
 
 - [`domain.md`](domain.md): money, dates, series, forecast, balances and summaries (`internal/domain`)
+- [`persistence.md`](persistence.md): schema, migrations, sqlc queries, repositories and their tests
 
 ## Repository layout
 
@@ -50,7 +51,9 @@ and `domain` depends on nothing. The boundaries are enforced by lint, not by con
 | Area | Status |
 |---|---|
 | Entry point (`serve`, `healthcheck`, graceful shutdown, slog JSON) | Built |
-| Configuration from env | Built (port, log level) |
+| Entry point `migrate` | Built: applies pending migrations and exits |
+| Configuration from env | Built (port, log level, database URL) |
 | Domain (`internal/domain`) and the `Clock` port | Built: money, dates, series, forecast, balances, summaries |
+| Persistence (`db/`, `internal/port`, `internal/adapter/postgres`) | Built: money schema, migrations, repositories |
 | HTTP | `GET /healthz` only |
 | Everything else | See the v0.1 milestone |

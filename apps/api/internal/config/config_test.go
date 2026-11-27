@@ -64,3 +64,16 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 		})
 	}
 }
+
+func TestLoadReadsDatabaseURL(t *testing.T) {
+	t.Parallel()
+
+	url := "postgres://horizon@localhost:5432/horizon?sslmode=disable"
+	cfg, err := config.Load(env(map[string]string{"DATABASE_URL": url}))
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.DatabaseURL != url {
+		t.Errorf("DatabaseURL = %q, want %q", cfg.DatabaseURL, url)
+	}
+}

@@ -16,6 +16,11 @@ var (
 	ErrAmountTooLarge  = &Error{Code: "amount.too_large"}
 )
 
+// Ids.
+var (
+	ErrInvalidID = &Error{Code: "id.invalid"}
+)
+
 // Dates and months.
 var (
 	ErrInvalidDate  = &Error{Code: "date.invalid"}
@@ -32,6 +37,7 @@ var (
 	ErrInstallmentPartTooSmall = &Error{Code: "series.installment_part_too_small"}
 	ErrNotAnOccurrence         = &Error{Code: "series.not_an_occurrence"}
 	ErrSplitAtFirstOccurrence  = &Error{Code: "series.split_at_first_occurrence"}
+	ErrInvalidSeries           = &Error{Code: "series.invalid"}
 )
 
 // Forecast and views.
@@ -39,4 +45,11 @@ var (
 	ErrForecastDivisorOutOfRange = &Error{Code: "workspace.forecast_divisor_out_of_range"}
 	ErrForecastAmountNotPositive = &Error{Code: "forecast.amount_not_positive"}
 	ErrHorizonOutOfRange         = &Error{Code: "horizon.months_out_of_range"}
+)
+
+// Uniqueness and ownership rules the database enforces as a second lock.
+var (
+	ErrEmailTaken            = &Error{Code: "user.email_taken"}
+	ErrWorkspaceHasTransfers = &Error{Code: "workspace.has_transfers"}
+	ErrTagNameTaken          = &Error{Code: "tag.name_taken"}
 )

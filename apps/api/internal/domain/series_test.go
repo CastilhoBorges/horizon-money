@@ -513,3 +513,59 @@ func TestSeries_WithAmountKeepsOverrides(t *testing.T) {
 		t.Errorf("Expand after an all edit = %+v, want the individually edited occurrence kept: %+v", got, want)
 	}
 }
+
+func TestSeries_Validate(t *testing.T) {
+	t.Parallel()
+
+	monthly := recurring(t, domain.FrequencyMonthly, 1000, jan31, "")
+	daily := recurring(t, domain.FrequencyDaily, 1000, nov01, "")
+	_, dailyTail, err := daily.SplitAt(date(t, "2026-11-05"))
+	if err != nil {
+		t.Fatalf("SplitAt error = %v", err)
+	}
+	purchase := installments(t, 10000, 3, jan10)
+	_, purchaseTail, err := purchase.SplitAt(date(t, feb10))
+	if err != nil {
+		t.Fatalf("SplitAt error = %v", err)
+	}
+	for name, s := range map[string]domain.Series{
+		"monthly": monthly, "daily": daily, "a daily tail keeps its first anchor day": dailyTail,
+		"installments": purchase, "an installments tail": purchaseTail,
+	} {
+		if err := s.Validate(); err != nil {
+			t.Errorf("%s: Validate() error = %v, want nil", name, err)
+		}
+	}
+
+	tests := []struct {
+		name     string
+		change   func(s *domain.Series)
+		base     domain.Series
+		expected error
+	}{
+		{name: "unknown type", base: monthly, change: func(s *domain.Series) { s.Type = "transfer" }, expected: domain.ErrUnknownMovementType},
+		{name: "no frequency", base: monthly, change: func(s *domain.Series) { s.Frequency = "" }, expected: domain.ErrUnknownFrequency},
+		{name: "no start", base: monthly, change: func(s *domain.Series) { s.Start = domain.Date{} }, expected: domain.ErrInvalidDate},
+		{name: "zero amount", base: monthly, change: func(s *domain.Series) { s.Amount = 0 }, expected: domain.ErrAmountNotPositive},
+		{name: "end before start", base: monthly, change: func(s *domain.Series) { s.End = date(t, "2026-01-30") }, expected: domain.ErrEndBeforeStart},
+		{name: "anchor day 0", base: daily, change: func(s *domain.Series) { s.AnchorDay = 0 }, expected: domain.ErrInvalidSeries},
+		{name: "anchor day 32", base: daily, change: func(s *domain.Series) { s.AnchorDay = 32 }, expected: domain.ErrInvalidSeries},
+		{name: "monthly start off its anchor day", base: monthly, change: func(s *domain.Series) { s.AnchorDay = 15 }, expected: domain.ErrInvalidSeries},
+		{name: "monthly with installment fields", base: monthly, change: func(s *domain.Series) { s.Parts = 3 }, expected: domain.ErrInvalidSeries},
+		{name: "one part", base: purchase, change: func(s *domain.Series) { s.Parts = 1 }, expected: domain.ErrInstallmentsOutOfRange},
+		{name: "first part 0", base: purchase, change: func(s *domain.Series) { s.FirstPart = 0 }, expected: domain.ErrInvalidSeries},
+		{name: "first part past the last", base: purchase, change: func(s *domain.Series) { s.FirstPart = 4 }, expected: domain.ErrInvalidSeries},
+		{name: "zero last part", base: purchase, change: func(s *domain.Series) { s.LastAmount = 0 }, expected: domain.ErrAmountNotPositive},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			s := tt.base
+			tt.change(&s)
+			if err := s.Validate(); !errors.Is(err, tt.expected) {
+				t.Errorf("Validate() error = %v, want %v", err, tt.expected)
+			}
+		})
+	}
+}

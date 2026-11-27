@@ -2,6 +2,7 @@ package domain_test
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 	"time"
 
@@ -213,5 +214,106 @@ func TestLedger_Horizon(t *testing.T) {
 		if _, err := ledger.Horizon(month(t, "2026-11"), months, date(t, nov27)); !errors.Is(err, domain.ErrHorizonOutOfRange) {
 			t.Errorf("Horizon(%d months) error = %v, want %v", months, err, domain.ErrHorizonOutOfRange)
 		}
+	}
+}
+
+func mustID(t *testing.T, s string) domain.ID {
+	t.Helper()
+	id, err := domain.ParseID(s)
+	if err != nil {
+		t.Fatalf("ParseID(%q) error = %v", s, err)
+	}
+	return id
+}
+
+func TestNewLedger_AcceptanceFixtureFromRecords(t *testing.T) {
+	t.Parallel()
+
+	workspace := domain.Workspace{
+		ID: mustID(t, "01a21ec4-e9fa-7aa5-8edc-d14ef635e779"), Start: date(t, nov01), InitialBalance: 25000, ForecastDivisor: 30,
+	}
+	categories := []domain.ForecastCategory{{MonthlyAmount: 35000}, {MonthlyAmount: 30000}, {MonthlyAmount: 60000}}
+	fixture := acceptanceLedger(t)
+	movements := make([]domain.Movement, 0, len(fixture.Entries))
+	for _, e := range fixture.Entries {
+		movements = append(movements, domain.Movement{WorkspaceID: workspace.ID, Entry: e})
+	}
+
+	ledger, err := domain.NewLedger(workspace, categories, movements, nil, nil, date(t, "2026-12-02"))
+	if err != nil {
+		t.Fatalf("NewLedger error = %v", err)
+	}
+	from, to, today := date(t, nov01), date(t, "2026-12-02"), date(t, nov27)
+	if got, want := ledger.Days(from, to, today), fixture.Days(from, to, today); !reflect.DeepEqual(got, want) {
+		t.Errorf("Days from the stored records differ from the §4.14 fixture:\n got %+v\nwant %+v", got, want)
+	}
+}
+
+func TestNewLedger_SeriesEditsAndTransfers(t *testing.T) {
+	t.Parallel()
+
+	workspace := domain.Workspace{
+		ID: mustID(t, "01a21ec4-e9fa-7aa5-8edc-d14ef635e779"), Start: date(t, nov01), InitialBalance: 100000,
+		LowThreshold: 5000, ForecastDivisor: 30,
+	}
+	other := mustID(t, "01a21ec4-e9fa-7aa5-8edc-d14ef635e780")
+	rentID := mustID(t, "01a21ec4-e9fa-7aa5-8edc-d14ef635e781")
+	rent, err := domain.NewRecurring(domain.TypeExpense, domain.FrequencyMonthly, 120000, date(t, "2020-01-05"), domain.Date{})
+	if err != nil {
+		t.Fatalf("NewRecurring error = %v", err)
+	}
+	movements := []domain.Movement{
+		{ID: rentID, WorkspaceID: workspace.ID, Series: &rent, GroupID: rentID},
+		{WorkspaceID: workspace.ID, Entry: entry(t, "2026-10-31", domain.TypeIncome, 999)}, // before D0
+		{WorkspaceID: other, Entry: entry(t, nov02, domain.TypeIncome, 999)},               // another workspace
+	}
+	edits := map[domain.ID][]domain.OccurrenceEdit{rentID: {
+		{Original: date(t, "2026-11-05"), Exception: domain.Exception{Date: date(t, "2026-11-07"), Amount: 130000}},
+		{Original: date(t, "2026-12-05"), Exception: domain.Exception{Deleted: true}},
+	}}
+	transfers := []domain.Transfer{
+		{FromWorkspaceID: workspace.ID, ToWorkspaceID: other, AmountSent: 20000, AmountReceived: 4000, Date: date(t, "2026-11-10")},
+		{FromWorkspaceID: other, ToWorkspaceID: workspace.ID, AmountSent: 1000, AmountReceived: 5000, Date: date(t, "2026-11-12")},
+	}
+
+	got, err := domain.NewLedger(workspace, nil, movements, edits, transfers, date(t, dec31))
+	if err != nil {
+		t.Fatalf("NewLedger error = %v", err)
+	}
+	want := domain.Ledger{
+		Start: date(t, nov01), InitialBalance: 100000, DailyForecast: 0, LowThreshold: 5000,
+		Entries: []domain.Entry{entry(t, "2026-11-07", domain.TypeExpense, 130000)},
+		Transfers: []domain.TransferLeg{
+			{Date: date(t, "2026-11-10"), Amount: 20000, Incoming: false},
+			{Date: date(t, "2026-11-12"), Amount: 5000, Incoming: true},
+		},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("NewLedger =\n %+v\nwant\n %+v", got, want)
+	}
+}
+
+func TestNewLedgerRejectsBadRecords(t *testing.T) {
+	t.Parallel()
+
+	workspace := domain.Workspace{ID: mustID(t, "01a21ec4-e9fa-7aa5-8edc-d14ef635e779"), Start: date(t, nov01), ForecastDivisor: 30}
+	corrupt := domain.Series{Type: domain.TypeExpense, Frequency: domain.FrequencyMonthly, Start: date(t, nov01), Amount: 100}
+	tests := []struct {
+		name      string
+		workspace domain.Workspace
+		movements []domain.Movement
+		expected  error
+	}{
+		{name: "divisor out of range", workspace: domain.Workspace{ID: workspace.ID, Start: workspace.Start, ForecastDivisor: 27}, expected: domain.ErrForecastDivisorOutOfRange},
+		{name: "a corrupt series", workspace: workspace, movements: []domain.Movement{{WorkspaceID: workspace.ID, Series: &corrupt}}, expected: domain.ErrInvalidSeries},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			if _, err := domain.NewLedger(tt.workspace, nil, tt.movements, nil, nil, date(t, dec31)); !errors.Is(err, tt.expected) {
+				t.Errorf("NewLedger error = %v, want %v", err, tt.expected)
+			}
+		})
 	}
 }

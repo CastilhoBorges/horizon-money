@@ -59,7 +59,8 @@ The approved design lives in `docs/specs/`. Read the relevant spec before changi
    ```
 
    - Each worktree uses **its own database** (`horizon_<slug>`) on the shared Postgres container and its
-     own `PORT`, so a reset in one task never breaks another.
+     own `PORT`, so a reset in one task never breaks another. `pnpm db:worktree <slug>` creates and
+     migrates it and prints the `DATABASE_URL` line for the worktree's `.env`.
    - Remove the worktree and branch after merge.
 6. **Conventional Commits.** commitlint checks them in the commit-msg hook, and CI checks the PR title.
 7. **Structured logging at every boundary:** HTTP, MCP, repositories and outbound clients.

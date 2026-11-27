@@ -33,6 +33,7 @@ identifiers, API fields, MCP tool names and docs.
 | dia âncora | `anchor day` | The day of the month a monthly series falls on; the last day in shorter months |
 | escopo da edição | `scope` | `this`, `following` or `all` occurrences |
 | grupo da série | `series group` | The series a `following` split produced, edited together by `all` |
+| ocorrência editada | `occurrence edit` | One occurrence of a series deleted or overridden; a full snapshot, stored as an exception |
 
 ## Forecast and calculations
 

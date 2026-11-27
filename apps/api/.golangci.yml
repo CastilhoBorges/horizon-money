@@ -6,6 +6,9 @@ run:
   concurrency: 4
   timeout: 5m
   tests: true
+  # Integration tests sit behind a build tag; lint them too.
+  build-tags:
+    - integration
 
 issues:
   max-issues-per-linter: 0
