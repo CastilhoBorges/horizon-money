@@ -27,13 +27,18 @@ import (
 const shutdownTimeout = 15 * time.Second
 
 func main() {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
-	if err := run(ctx, os.Args[1:], os.Getenv, os.Stdout); err != nil {
+	if err := runWithSignals(); err != nil {
 		fmt.Fprintln(os.Stderr, "horizon-money:", err)
 		os.Exit(1)
 	}
+}
+
+// runWithSignals stops the process cleanly on SIGINT or SIGTERM.
+func runWithSignals() error {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	return run(ctx, os.Args[1:], os.Getenv, os.Stdout)
 }
 
 // run dispatches the subcommand. It takes its dependencies as arguments so tests can drive it.

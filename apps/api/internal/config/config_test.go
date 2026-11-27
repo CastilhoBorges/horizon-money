@@ -7,6 +7,11 @@ import (
 	"github.com/CastilhoBorges/horizon-money/apps/api/internal/config"
 )
 
+const (
+	portKey     = "PORT"
+	logLevelKey = "LOG_LEVEL"
+)
+
 func env(values map[string]string) func(string) string {
 	return func(key string) string { return values[key] }
 }
@@ -29,7 +34,7 @@ func TestLoadAppliesDefaults(t *testing.T) {
 func TestLoadReadsEnvironment(t *testing.T) {
 	t.Parallel()
 
-	cfg, err := config.Load(env(map[string]string{"PORT": "9090", "LOG_LEVEL": "debug"}))
+	cfg, err := config.Load(env(map[string]string{portKey: "9090", logLevelKey: "debug"}))
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
@@ -45,10 +50,10 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 	t.Parallel()
 
 	cases := map[string]map[string]string{
-		"port not a number": {"PORT": "abc"},
-		"port out of range": {"PORT": "70000"},
-		"port zero":         {"PORT": "0"},
-		"unknown log level": {"LOG_LEVEL": "loud"},
+		"port not a number": {portKey: "abc"},
+		"port out of range": {portKey: "70000"},
+		"port zero":         {portKey: "0"},
+		"unknown log level": {logLevelKey: "loud"},
 	}
 	for name, values := range cases {
 		t.Run(name, func(t *testing.T) {

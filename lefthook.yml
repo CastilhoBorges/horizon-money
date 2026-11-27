@@ -1,0 +1,18 @@
+# Local git hooks (installed by `pnpm install`). CI runs the same gates; these catch problems before a push.
+pre-commit:
+  parallel: true
+  jobs:
+    - name: go-format
+      root: apps/api/
+      glob: "*.go"
+      run: golangci-lint fmt {staged_files}
+      stage_fixed: true
+    - name: go-lint
+      root: apps/api/
+      glob: "*.go"
+      run: golangci-lint run ./...
+
+commit-msg:
+  jobs:
+    - name: commitlint
+      run: pnpm exec commitlint --edit {1}

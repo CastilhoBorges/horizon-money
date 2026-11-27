@@ -11,12 +11,17 @@ import (
 
 func freePort(t *testing.T) int {
 	t.Helper()
-	l, err := net.Listen("tcp", "127.0.0.1:0")
+	var lc net.ListenConfig
+	l, err := lc.Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}
 	defer func() { _ = l.Close() }()
-	return l.Addr().(*net.TCPAddr).Port
+	addr, ok := l.Addr().(*net.TCPAddr)
+	if !ok {
+		t.Fatalf("listener address %v is not TCP", l.Addr())
+	}
+	return addr.Port
 }
 
 func TestRunRejectsUnknownCommand(t *testing.T) {
