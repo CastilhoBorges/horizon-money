@@ -50,6 +50,27 @@ jobs:
       - name: Vulnerability check
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
 
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: Tooling tests (docs script and agent hooks)
+        run: node --test scripts/ .claude/hooks/
+
+      - name: Indexes, third-party notices and line limits
+        run: node scripts/docs-index.mjs --check
+
   pr-title:
     name: PR title
     if: github.event_name == 'pull_request'

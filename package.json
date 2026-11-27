@@ -15,7 +15,10 @@
     "lint": "turbo run lint",
     "format": "turbo run format",
     "db:up": "docker compose --profile dev up -d postgres mailpit",
-    "db:down": "docker compose --profile dev down"
+    "db:down": "docker compose --profile dev down",
+    "docs:index": "node scripts/docs-index.mjs",
+    "docs:check": "node scripts/docs-index.mjs --check",
+    "test:tooling": "node --test scripts/ .claude/hooks/"
   },
   "devDependencies": {
     "@commitlint/cli": "21.2.4",
