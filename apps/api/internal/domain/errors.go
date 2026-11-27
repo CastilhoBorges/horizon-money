@@ -15,3 +15,9 @@ var (
 	ErrTooManyDecimals = &Error{Code: "amount.too_many_decimals"}
 	ErrAmountTooLarge  = &Error{Code: "amount.too_large"}
 )
+
+// Dates and months.
+var (
+	ErrInvalidDate  = &Error{Code: "date.invalid"}
+	ErrInvalidMonth = &Error{Code: "month.invalid"}
+)
