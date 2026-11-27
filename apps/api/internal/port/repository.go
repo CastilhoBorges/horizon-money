@@ -99,10 +99,11 @@ type Movements interface {
 	PutEdit(ctx context.Context, userID, movementID domain.ID, e domain.OccurrenceEdit) error
 	// Edits lists a series' occurrence edits by original date.
 	Edits(ctx context.Context, userID, movementID domain.ID) ([]domain.OccurrenceEdit, error)
-	// ForLedger loads what the workspace's ledger from start through to needs (persistence spec §6): the
-	// one-offs in the range, every series that can produce an occurrence there, and their edits by
-	// movement id. domain.NewLedger turns them into the ledger.
-	ForLedger(ctx context.Context, userID, workspaceID domain.ID, start, to domain.Date) ([]domain.Movement, map[domain.ID][]domain.OccurrenceEdit, error)
+	// ForLedger loads what the workspace's ledger up to the date to needs (persistence spec §6). A balance
+	// builds up from D0, so the range always starts at the workspace's D0: the one-offs from D0 through to,
+	// every series that can produce an occurrence there, and their edits by movement id.
+	// domain.NewLedger turns them into the ledger.
+	ForLedger(ctx context.Context, userID, workspaceID domain.ID, to domain.Date) ([]domain.Movement, map[domain.ID][]domain.OccurrenceEdit, error)
 }
 
 // Store hands out the repositories. InTx runs several repository calls in one transaction: it commits

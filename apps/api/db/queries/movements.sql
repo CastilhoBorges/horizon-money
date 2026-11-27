@@ -44,19 +44,23 @@ group by m.id
 order by m.date, m.id;
 
 -- name: ListLedgerMovements :many
--- One-offs in the range, every series that can produce an occurrence there, and every series with an
--- occurrence moved into it.
+-- From the workspace's D0 through to: the one-offs, every series that can produce an occurrence there, and
+-- every series with an occurrence moved into it.
+with d0 as (
+    select initial_balance_date as start_date from workspaces where id = @workspace_id and user_id = @user_id
+)
 select sqlc.embed(m),
        coalesce(array_agg(mt.tag_id order by mt.tag_id) filter (where mt.tag_id is not null), '{}')::uuid[] as tag_ids
 from movements m
+cross join d0
 left join movement_tags mt on mt.movement_id = m.id
 where m.user_id = @user_id and m.workspace_id = @workspace_id
   and (
-      (m.frequency is null and m.date between @start_date and @to_date)
-      or (m.frequency is not null and m.date <= @to_date and (m.end_date is null or m.end_date >= @start_date))
+      (m.frequency is null and m.date between d0.start_date and @to_date)
+      or (m.frequency is not null and m.date <= @to_date and (m.end_date is null or m.end_date >= d0.start_date))
       or (m.frequency is not null and exists (
           select 1 from movement_exceptions e
-          where e.movement_id = m.id and not e.deleted and e.date between @start_date and @to_date
+          where e.movement_id = m.id and not e.deleted and e.date between d0.start_date and @to_date
       ))
   )
 group by m.id
@@ -68,14 +72,17 @@ where movement_id = @movement_id and user_id = @user_id;
 
 -- name: AddMovementTags :exec
 insert into movement_tags (movement_id, tag_id, user_id)
-select @movement_id::uuid, unnest(@tag_ids::uuid[]), @user_id::uuid;
+select distinct @movement_id::uuid, unnest(@tag_ids::uuid[]), @user_id::uuid;
 
--- name: UpsertMovementException :exec
+-- name: UpsertMovementException :execrows
+-- The update only ever touches the caller's own row: on a conflict with another user's exception it
+-- changes nothing and reports 0 rows (an insert for another user's movement fails on the foreign key).
 insert into movement_exceptions (movement_id, user_id, original_date, deleted, date, amount, description)
 values (@movement_id, @user_id, @original_date, @deleted, sqlc.narg(date), sqlc.narg(amount), sqlc.narg(description))
 on conflict (movement_id, original_date) do update
 set deleted = excluded.deleted, date = excluded.date, amount = excluded.amount,
-    description = excluded.description, updated_at = now();
+    description = excluded.description, updated_at = now()
+where movement_exceptions.user_id = excluded.user_id;
 
 -- name: DeleteExceptionTags :exec
 delete from movement_exception_tags
@@ -83,7 +90,7 @@ where movement_id = @movement_id and original_date = @original_date and user_id 
 
 -- name: AddExceptionTags :exec
 insert into movement_exception_tags (movement_id, original_date, user_id, tag_id)
-select @movement_id::uuid, @original_date::date, @user_id::uuid, unnest(@tag_ids::uuid[]);
+select distinct @movement_id::uuid, @original_date::date, @user_id::uuid, unnest(@tag_ids::uuid[]);
 
 -- name: ListMovementExceptions :many
 select sqlc.embed(e),

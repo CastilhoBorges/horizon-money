@@ -13,7 +13,7 @@ import (
 
 const addExceptionTags = `-- name: AddExceptionTags :exec
 insert into movement_exception_tags (movement_id, original_date, user_id, tag_id)
-select $1::uuid, $2::date, $3::uuid, unnest($4::uuid[])
+select distinct $1::uuid, $2::date, $3::uuid, unnest($4::uuid[])
 `
 
 type AddExceptionTagsParams struct {
@@ -35,7 +35,7 @@ func (q *Queries) AddExceptionTags(ctx context.Context, arg AddExceptionTagsPara
 
 const addMovementTags = `-- name: AddMovementTags :exec
 insert into movement_tags (movement_id, tag_id, user_id)
-select $1::uuid, unnest($2::uuid[]), $3::uuid
+select distinct $1::uuid, unnest($2::uuid[]), $3::uuid
 `
 
 type AddMovementTagsParams struct {
@@ -257,17 +257,21 @@ func (q *Queries) ListGroupMovements(ctx context.Context, arg ListGroupMovements
 }
 
 const listLedgerMovements = `-- name: ListLedgerMovements :many
+with d0 as (
+    select initial_balance_date as start_date from workspaces where id = $2 and user_id = $1
+)
 select m.id, m.user_id, m.workspace_id, m.type, m.amount, m.description, m.date, m.frequency, m.end_date, m.anchor_day, m.last_amount, m.parts, m.first_part, m.series_group_id, m.created_at, m.updated_at,
        coalesce(array_agg(mt.tag_id order by mt.tag_id) filter (where mt.tag_id is not null), '{}')::uuid[] as tag_ids
 from movements m
+cross join d0
 left join movement_tags mt on mt.movement_id = m.id
 where m.user_id = $1 and m.workspace_id = $2
   and (
-      (m.frequency is null and m.date between $3 and $4)
-      or (m.frequency is not null and m.date <= $4 and (m.end_date is null or m.end_date >= $3))
+      (m.frequency is null and m.date between d0.start_date and $3)
+      or (m.frequency is not null and m.date <= $3 and (m.end_date is null or m.end_date >= d0.start_date))
       or (m.frequency is not null and exists (
           select 1 from movement_exceptions e
-          where e.movement_id = m.id and not e.deleted and e.date between $3 and $4
+          where e.movement_id = m.id and not e.deleted and e.date between d0.start_date and $3
       ))
   )
 group by m.id
@@ -277,7 +281,6 @@ order by m.date, m.id
 type ListLedgerMovementsParams struct {
 	UserID      pgtype.UUID
 	WorkspaceID pgtype.UUID
-	StartDate   pgtype.Date
 	ToDate      pgtype.Date
 }
 
@@ -286,15 +289,10 @@ type ListLedgerMovementsRow struct {
 	TagIds   []pgtype.UUID
 }
 
-// One-offs in the range, every series that can produce an occurrence there, and every series with an
-// occurrence moved into it.
+// From the workspace's D0 through to: the one-offs, every series that can produce an occurrence there, and
+// every series with an occurrence moved into it.
 func (q *Queries) ListLedgerMovements(ctx context.Context, arg ListLedgerMovementsParams) ([]ListLedgerMovementsRow, error) {
-	rows, err := q.db.Query(ctx, listLedgerMovements,
-		arg.UserID,
-		arg.WorkspaceID,
-		arg.StartDate,
-		arg.ToDate,
-	)
+	rows, err := q.db.Query(ctx, listLedgerMovements, arg.UserID, arg.WorkspaceID, arg.ToDate)
 	if err != nil {
 		return nil, err
 	}
@@ -445,12 +443,13 @@ func (q *Queries) UpdateMovement(ctx context.Context, arg UpdateMovementParams) 
 	return result.RowsAffected(), nil
 }
 
-const upsertMovementException = `-- name: UpsertMovementException :exec
+const upsertMovementException = `-- name: UpsertMovementException :execrows
 insert into movement_exceptions (movement_id, user_id, original_date, deleted, date, amount, description)
 values ($1, $2, $3, $4, $5, $6, $7)
 on conflict (movement_id, original_date) do update
 set deleted = excluded.deleted, date = excluded.date, amount = excluded.amount,
     description = excluded.description, updated_at = now()
+where movement_exceptions.user_id = excluded.user_id
 `
 
 type UpsertMovementExceptionParams struct {
@@ -463,8 +462,10 @@ type UpsertMovementExceptionParams struct {
 	Description  *string
 }
 
-func (q *Queries) UpsertMovementException(ctx context.Context, arg UpsertMovementExceptionParams) error {
-	_, err := q.db.Exec(ctx, upsertMovementException,
+// The update only ever touches the caller's own row: on a conflict with another user's exception it
+// changes nothing and reports 0 rows (an insert for another user's movement fails on the foreign key).
+func (q *Queries) UpsertMovementException(ctx context.Context, arg UpsertMovementExceptionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, upsertMovementException,
 		arg.MovementID,
 		arg.UserID,
 		arg.OriginalDate,
@@ -473,5 +474,8 @@ func (q *Queries) UpsertMovementException(ctx context.Context, arg UpsertMovemen
 		arg.Amount,
 		arg.Description,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }

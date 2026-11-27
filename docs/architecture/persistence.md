@@ -57,4 +57,5 @@ All ids are UUIDv7 from `uuidv7()`, and money is `bigint` minor units (ADR-0014)
 | `pnpm db:worktree <slug>` | creates and migrates `horizon_<slug>` and prints its `DATABASE_URL` |
 
 The package scripts load the repository's `.env` through `scripts/with-env.mjs`, because Turborepo does
-not; variables already in the environment win.
+not. Variables already in the environment win: the root `dev` and `test:integration` scripts run Turborepo
+with `--env-mode=loose`, so the shell's variables reach the task.

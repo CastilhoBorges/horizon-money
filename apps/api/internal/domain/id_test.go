@@ -46,6 +46,8 @@ func TestParseIDRejectsMalformedInput(t *testing.T) {
 		"01a21ec4-e9fa-7aa5-8edc-d14ef635e77g",
 		"{01a21ec4-e9fa-7aa5-8edc-d14ef635e779}",
 		"00000000-0000-0000-0000-000000000000",
+		"01a21ec4-e9fa-7aa5-8edc-d14ef635--79",
+		"01a21ec4-e9fa-7aa5-8edc-------------",
 	} {
 		t.Run(input, func(t *testing.T) {
 			t.Parallel()

@@ -178,7 +178,7 @@ func TestMovements_AnotherUserCannotReachThem(t *testing.T) {
 		}(),
 		"tag with their tag": func() error { _, err := repos.Movements.Create(ctx, intruder, withOwnersTag); return err }(),
 		"ledger of their ws": func() error {
-			_, _, err := repos.Movements.ForLedger(ctx, intruder, w.ID, w.Start, mustDate(t, "2026-12-31"))
+			_, _, err := repos.Movements.ForLedger(ctx, intruder, w.ID, mustDate(t, "2026-12-31"))
 			return err
 		}(),
 	}
@@ -230,5 +230,75 @@ func TestMovements_TheDatabaseIsTheSecondLock(t *testing.T) {
 		if _, err := pool.Exec(t.Context(), stmt.sql, stmt.args...); err == nil {
 			t.Errorf("%s: insert succeeded, want the schema to refuse it", name)
 		}
+	}
+}
+
+func TestMovements_AnInvalidSeriesIsRefusedOnWrite(t *testing.T) {
+	t.Parallel()
+
+	repos := newStore(t).Repositories()
+	userID := newUser(t, repos)
+	w := newWorkspace(t, repos, userID, "Main")
+	offAnchor := domain.Series{Type: domain.TypeExpense, Frequency: domain.FrequencyMonthly, Start: mustDate(t, "2026-11-10"), AnchorDay: 15, Amount: 100}
+
+	if _, err := repos.Movements.Create(t.Context(), userID, domain.Movement{WorkspaceID: w.ID, Series: &offAnchor}); !errors.Is(err, domain.ErrInvalidSeries) {
+		t.Errorf("Create(series off its anchor day) error = %v, want %v", err, domain.ErrInvalidSeries)
+	}
+	rent := create(t, repos, userID, monthlySeries(t, w, "2026-01-05", 120000))
+	broken := rent
+	broken.Series = &offAnchor
+	if err := repos.Movements.Update(t.Context(), userID, broken); !errors.Is(err, domain.ErrInvalidSeries) {
+		t.Errorf("Update(series off its anchor day) error = %v, want %v", err, domain.ErrInvalidSeries)
+	}
+	if movements, _, err := repos.Movements.ForLedger(t.Context(), userID, w.ID, mustDate(t, "2026-12-31")); err != nil || len(movements) != 1 {
+		t.Errorf("ForLedger after the refused writes = %d movements, %v; want the rent only, readable", len(movements), err)
+	}
+}
+
+func TestMovements_AnotherUserCannotOverwriteAStoredEdit(t *testing.T) {
+	t.Parallel()
+
+	repos := newStore(t).Repositories()
+	owner, intruder := newUser(t, repos), newUser(t, repos)
+	w := newWorkspace(t, repos, owner, "Main")
+	rent := create(t, repos, owner, monthlySeries(t, w, "2026-01-05", 120000))
+	moved := domain.OccurrenceEdit{Original: mustDate(t, "2026-11-05"), Exception: domain.Exception{Date: mustDate(t, "2026-11-07"), Amount: 130000}}
+	if err := repos.Movements.PutEdit(t.Context(), owner, rent.ID, moved); err != nil {
+		t.Fatalf("PutEdit error = %v", err)
+	}
+
+	deletion := domain.OccurrenceEdit{Original: moved.Original, Exception: domain.Exception{Deleted: true}}
+	if err := repos.Movements.PutEdit(t.Context(), intruder, rent.ID, deletion); !errors.Is(err, port.ErrNotFound) {
+		t.Errorf("PutEdit over the owner's edit by another user: error = %v, want %v", err, port.ErrNotFound)
+	}
+	if edits, err := repos.Movements.Edits(t.Context(), owner, rent.ID); err != nil || !reflect.DeepEqual(edits, []domain.OccurrenceEdit{moved}) {
+		t.Errorf("owner's edits = %+v, %v; want the moved occurrence untouched", edits, err)
+	}
+}
+
+func TestMovements_ARepeatedTagIsStoredOnce(t *testing.T) {
+	t.Parallel()
+
+	repos := newStore(t).Repositories()
+	userID := newUser(t, repos)
+	w := newWorkspace(t, repos, userID, "Main")
+	tag := newTag(t, repos, userID, "market")
+
+	m := monthlySeries(t, w, "2026-01-05", 120000)
+	m.TagIDs = []domain.ID{tag.ID, tag.ID}
+	created, err := repos.Movements.Create(t.Context(), userID, m)
+	if err != nil {
+		t.Fatalf("Create with a repeated tag error = %v, want nil", err)
+	}
+	if got, err := repos.Movements.Get(t.Context(), userID, created.ID); err != nil || !reflect.DeepEqual(got.TagIDs, []domain.ID{tag.ID}) {
+		t.Errorf("tags = %v, %v; want the tag once", got.TagIDs, err)
+	}
+
+	edit := domain.OccurrenceEdit{Original: mustDate(t, "2026-11-05"), Exception: domain.Exception{Date: mustDate(t, "2026-11-05"), Amount: 1}, TagIDs: []domain.ID{tag.ID, tag.ID}}
+	if err := repos.Movements.PutEdit(t.Context(), userID, created.ID, edit); err != nil {
+		t.Fatalf("PutEdit with a repeated tag error = %v, want nil", err)
+	}
+	if edits, err := repos.Movements.Edits(t.Context(), userID, created.ID); err != nil || len(edits) != 1 || !reflect.DeepEqual(edits[0].TagIDs, []domain.ID{tag.ID}) {
+		t.Errorf("edit tags = %+v, %v; want the tag once", edits, err)
 	}
 }

@@ -42,7 +42,19 @@ func templateOf(m domain.Movement) template {
 	return t
 }
 
+// validSeries refuses a series the read path would refuse, so a bad write never makes a workspace's
+// ledger unreadable.
+func validSeries(m domain.Movement) error {
+	if m.Series == nil {
+		return nil
+	}
+	return m.Series.Validate()
+}
+
 func (r movements) Create(ctx context.Context, userID domain.ID, m domain.Movement) (domain.Movement, error) {
+	if err := validSeries(m); err != nil {
+		return domain.Movement{}, err
+	}
 	t := templateOf(m)
 	err := r.inTx(ctx, func(q *sqlcgen.Queries) error {
 		row, err := q.CreateMovement(ctx, sqlcgen.CreateMovementParams{
@@ -75,6 +87,9 @@ func (r movements) Get(ctx context.Context, userID, id domain.ID) (domain.Moveme
 }
 
 func (r movements) Update(ctx context.Context, userID domain.ID, m domain.Movement) error {
+	if err := validSeries(m); err != nil {
+		return err
+	}
 	if m.Series != nil && m.GroupID.IsZero() {
 		m.GroupID = m.ID // a one-off turned into a series starts its own group
 	}
@@ -132,8 +147,12 @@ func (r movements) PutEdit(ctx context.Context, userID, movementID domain.ID, e 
 		if !e.Exception.Deleted {
 			params.Date, params.Amount, params.Description = toDate(e.Exception.Date), toBigint(e.Exception.Amount), toText(e.Description)
 		}
-		if err := q.UpsertMovementException(ctx, params); err != nil {
+		n, err := q.UpsertMovementException(ctx, params)
+		if err != nil {
 			return err
+		}
+		if n == 0 {
+			return port.ErrNotFound
 		}
 		key := sqlcgen.DeleteExceptionTagsParams{MovementID: toUUID(movementID), OriginalDate: toDate(e.Original), UserID: toUUID(userID)}
 		if err := q.DeleteExceptionTags(ctx, key); err != nil {
@@ -160,12 +179,12 @@ func (r movements) Edits(ctx context.Context, userID, movementID domain.ID) ([]d
 	return edits[movementID], nil
 }
 
-func (r movements) ForLedger(ctx context.Context, userID, workspaceID domain.ID, start, to domain.Date) ([]domain.Movement, map[domain.ID][]domain.OccurrenceEdit, error) {
+func (r movements) ForLedger(ctx context.Context, userID, workspaceID domain.ID, to domain.Date) ([]domain.Movement, map[domain.ID][]domain.OccurrenceEdit, error) {
 	if err := workspaceExists(ctx, r.q, userID, workspaceID); err != nil {
 		return nil, nil, r.done(ctx, "for_ledger", err, "workspace_id", workspaceID.String())
 	}
 	rows, err := r.q.ListLedgerMovements(ctx, sqlcgen.ListLedgerMovementsParams{
-		UserID: toUUID(userID), WorkspaceID: toUUID(workspaceID), StartDate: toDate(start), ToDate: toDate(to),
+		UserID: toUUID(userID), WorkspaceID: toUUID(workspaceID), ToDate: toDate(to),
 	})
 	if err != nil {
 		return nil, nil, r.done(ctx, "for_ledger", err, "workspace_id", workspaceID.String())

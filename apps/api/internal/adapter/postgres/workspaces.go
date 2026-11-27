@@ -50,10 +50,14 @@ func (r workspaces) List(ctx context.Context, userID domain.ID, includeArchived 
 }
 
 func (r workspaces) Update(ctx context.Context, userID domain.ID, w domain.Workspace) error {
+	// Checked here too: the column is a smallint, and a larger value would wrap instead of failing.
+	if w.ForecastDivisor < domain.MinForecastDivisor || w.ForecastDivisor > domain.MaxForecastDivisor {
+		return domain.ErrForecastDivisorOutOfRange
+	}
 	n, err := r.q.UpdateWorkspace(ctx, sqlcgen.UpdateWorkspaceParams{
 		ID: toUUID(w.ID), UserID: toUUID(userID), Name: w.Name, Currency: w.Currency.Code(),
 		InitialBalance: int64(w.InitialBalance), InitialBalanceDate: toDate(w.Start),
-		LowBalanceThreshold: int64(w.LowThreshold), ForecastDivisor: int16(w.ForecastDivisor), //nolint:gosec // 28–31, checked by the domain and the schema
+		LowBalanceThreshold: int64(w.LowThreshold), ForecastDivisor: int16(w.ForecastDivisor),
 	})
 	return r.affected(ctx, "update", n, err, w.ID)
 }

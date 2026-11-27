@@ -40,7 +40,7 @@ func TestMovements_ForLedgerPicksWhatTheRangeNeeds(t *testing.T) {
 	}
 	create(t, repos, userID, monthlySeries(t, w, "2027-02-01", 100)) // starts after the range
 
-	movements, edits, err := repos.Movements.ForLedger(ctx, userID, w.ID, w.Start, mustDate(t, "2026-12-31"))
+	movements, edits, err := repos.Movements.ForLedger(ctx, userID, w.ID, mustDate(t, "2026-12-31"))
 	if err != nil {
 		t.Fatalf("ForLedger error = %v", err)
 	}
@@ -49,6 +49,29 @@ func TestMovements_ForLedgerPicksWhatTheRangeNeeds(t *testing.T) {
 	}
 	if !reflect.DeepEqual(edits, map[domain.ID][]domain.OccurrenceEdit{movedIn.ID: {moved}}) {
 		t.Errorf("ForLedger edits = %+v, want only the moved occurrence", edits)
+	}
+}
+
+func TestMovements_ForLedgerAlwaysReadsFromD0(t *testing.T) {
+	t.Parallel()
+
+	repos := newStore(t).Repositories()
+	userID := newUser(t, repos)
+	w := newWorkspace(t, repos, userID, "Main") // D0 = 2026-11-01, initial 250.00
+	november := create(t, repos, userID, oneOff(t, w, nov03, domain.TypeExpense, 10000))
+
+	// A December balance still needs November's movements: the balance builds up from D0.
+	movements, _, err := repos.Movements.ForLedger(t.Context(), userID, w.ID, mustDate(t, "2026-12-31"))
+	if err != nil || !reflect.DeepEqual(movements, []domain.Movement{november}) {
+		t.Fatalf("ForLedger = %+v, %v; want the November one-off", movements, err)
+	}
+	ledger, err := domain.NewLedger(w, nil, movements, nil, nil, mustDate(t, "2026-12-31"))
+	if err != nil {
+		t.Fatalf("NewLedger error = %v", err)
+	}
+	dec1 := mustDate(t, "2026-12-01")
+	if days := ledger.Days(dec1, dec1, mustDate(t, "2026-11-27")); len(days) != 1 || days[0].End != 15000 {
+		t.Errorf("Dec 1 = %+v, want an end balance of 150.00 (250.00 - 100.00)", days)
 	}
 }
 
@@ -91,7 +114,7 @@ func TestLedger_TheAcceptanceFixtureStoredAndReadBack(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ForecastCategories error = %v", err)
 	}
-	movements, edits, err := repos.Movements.ForLedger(ctx, userID, w.ID, w.Start, to)
+	movements, edits, err := repos.Movements.ForLedger(ctx, userID, w.ID, to)
 	if err != nil {
 		t.Fatalf("ForLedger error = %v", err)
 	}

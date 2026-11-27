@@ -18,8 +18,12 @@ func ParseID(s string) (ID, error) {
 	if len(s) != idLength || s[8] != '-' || s[13] != '-' || s[18] != '-' || s[23] != '-' {
 		return ID{}, ErrInvalidID
 	}
+	digits := strings.ReplaceAll(s, "-", "")
 	var id ID
-	if _, err := hex.Decode(id[:], []byte(strings.ReplaceAll(s, "-", ""))); err != nil || id.IsZero() {
+	if len(digits) != hex.EncodedLen(len(id)) {
+		return ID{}, ErrInvalidID // a dash in place of a digit
+	}
+	if _, err := hex.Decode(id[:], []byte(digits)); err != nil || id.IsZero() {
 		return ID{}, ErrInvalidID
 	}
 	return id, nil

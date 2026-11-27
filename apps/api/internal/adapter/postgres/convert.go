@@ -82,8 +82,8 @@ func toNullUUID(id domain.ID) pgtype.UUID {
 	return toUUID(id)
 }
 
-// toSmallint maps 0 to NULL for the optional smallint columns (anchor day, parts, first part), whose
-// values the domain and the schema keep within 1–360.
+// toSmallint maps 0 to NULL for the optional smallint columns (anchor day, parts, first part). Callers
+// pass values Series.Validate has already bounded to 1–360, so the conversion cannot wrap.
 func toSmallint(n int) *int16 {
 	if n == 0 {
 		return nil

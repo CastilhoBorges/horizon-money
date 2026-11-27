@@ -8,10 +8,10 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "turbo run dev --env-mode=loose",
     "build": "turbo run build",
     "test": "turbo run test",
-    "test:integration": "turbo run test:integration",
+    "test:integration": "turbo run test:integration --env-mode=loose",
     "gen": "turbo run gen",
     "lint": "turbo run lint",
     "format": "turbo run format",

@@ -201,3 +201,20 @@ func TestWorkspaces_AnotherUserCannotReachThem(t *testing.T) {
 		t.Errorf("owner's categories after the attempts = %+v, %v; want none", cats, err)
 	}
 }
+
+func TestWorkspaces_ADivisorBeyondSmallintIsRefusedNotWrapped(t *testing.T) {
+	t.Parallel()
+
+	repos := newStore(t).Repositories()
+	userID := newUser(t, repos)
+	w := newWorkspace(t, repos, userID, "Main")
+
+	huge := w
+	huge.ForecastDivisor = 65566 // wraps to 30 as an int16
+	if err := repos.Workspaces.Update(t.Context(), userID, huge); !errors.Is(err, domain.ErrForecastDivisorOutOfRange) {
+		t.Errorf("Update(divisor 65566) error = %v, want %v", err, domain.ErrForecastDivisorOutOfRange)
+	}
+	if got, err := repos.Workspaces.Get(t.Context(), userID, w.ID); err != nil || got != w {
+		t.Errorf("workspace after the refused update = %+v, %v; want it unchanged", got, err)
+	}
+}
