@@ -9,11 +9,6 @@ import (
 	"github.com/CastilhoBorges/horizon-money/apps/api/internal/domain"
 )
 
-const (
-	nov27 = "2026-11-27"
-	nov28 = "2026-11-28"
-)
-
 func TestNewDate(t *testing.T) {
 	t.Parallel()
 
@@ -111,9 +106,9 @@ func TestDate_AddDays(t *testing.T) {
 		days     int
 		expected string
 	}{
-		{name: "into the next month", from: "2026-11-30", days: 1, expected: "2026-12-01"},
+		{name: "into the next month", from: nov30, days: 1, expected: "2026-12-01"},
 		{name: "into the next year", from: "2026-12-31", days: 1, expected: "2027-01-01"},
-		{name: "onto a leap day", from: "2028-02-28", days: 1, expected: "2028-02-29"},
+		{name: "onto a leap day", from: "2028-02-28", days: 1, expected: leapDay},
 		{name: "backwards", from: "2026-03-01", days: -1, expected: "2026-02-28"},
 	}
 	for _, tt := range tests {
@@ -130,10 +125,10 @@ func TestDate_AddDays(t *testing.T) {
 func TestDate_DaysSince(t *testing.T) {
 	t.Parallel()
 
-	if got := date(t, nov27).DaysSince(date(t, "2026-11-01")); got != 26 {
+	if got := date(t, nov27).DaysSince(date(t, nov01)); got != 26 {
 		t.Errorf("DaysSince = %d, want 26", got)
 	}
-	if got := date(t, "2026-11-01").DaysSince(date(t, nov27)); got != -26 {
+	if got := date(t, nov01).DaysSince(date(t, nov27)); got != -26 {
 		t.Errorf("DaysSince = %d, want -26", got)
 	}
 }
@@ -160,7 +155,7 @@ func TestDate_IsWeekend(t *testing.T) {
 		nov27:        false, // Friday
 		nov28:        true,  // Saturday
 		"2026-11-29": true,  // Sunday
-		"2026-11-30": false, // Monday
+		nov30:        false, // Monday
 	}
 	for input, expected := range tests {
 		t.Run(input, func(t *testing.T) {

@@ -6,6 +6,16 @@ import (
 	"github.com/CastilhoBorges/horizon-money/apps/api/internal/domain"
 )
 
+// Dates many tests share.
+const (
+	nov01   = "2026-11-01"
+	nov02   = "2026-11-02"
+	nov27   = "2026-11-27"
+	nov28   = "2026-11-28"
+	nov30   = "2026-11-30"
+	leapDay = "2028-02-29"
+)
+
 // date parses a "YYYY-MM-DD" literal or fails the test.
 func date(t *testing.T, s string) domain.Date {
 	t.Helper()

@@ -21,3 +21,13 @@ var (
 	ErrInvalidDate  = &Error{Code: "date.invalid"}
 	ErrInvalidMonth = &Error{Code: "month.invalid"}
 )
+
+// Movements and series.
+var (
+	ErrAmountNotPositive      = &Error{Code: "movement.amount_not_positive"}
+	ErrUnknownMovementType    = &Error{Code: "movement.type_unknown"}
+	ErrUnknownFrequency       = &Error{Code: "series.frequency_unknown"}
+	ErrEndBeforeStart         = &Error{Code: "series.end_before_start"}
+	ErrNotAnOccurrence        = &Error{Code: "series.not_an_occurrence"}
+	ErrSplitAtFirstOccurrence = &Error{Code: "series.split_at_first_occurrence"}
+)

@@ -18,8 +18,8 @@ func TestParseMonth(t *testing.T) {
 		expectedDays  int
 	}{
 		{input: "2026-02", expectedFirst: "2026-02-01", expectedLast: "2026-02-28", expectedDays: 28},
-		{input: "2028-02", expectedFirst: "2028-02-01", expectedLast: "2028-02-29", expectedDays: 29},
-		{input: "2026-11", expectedFirst: "2026-11-01", expectedLast: "2026-11-30", expectedDays: 30},
+		{input: "2028-02", expectedFirst: "2028-02-01", expectedLast: leapDay, expectedDays: 29},
+		{input: "2026-11", expectedFirst: nov01, expectedLast: nov30, expectedDays: 30},
 	}
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
@@ -40,7 +40,7 @@ func TestParseMonth(t *testing.T) {
 func TestParseMonthRejectsInvalidInput(t *testing.T) {
 	t.Parallel()
 
-	for _, input := range []string{"2026-13", "2026-1", "26-01", "", "2026-11-01"} {
+	for _, input := range []string{"2026-13", "2026-1", "26-01", "", nov01} {
 		t.Run(input, func(t *testing.T) {
 			t.Parallel()
 
@@ -103,7 +103,7 @@ func TestMonth_Contains(t *testing.T) {
 	t.Parallel()
 
 	m := month(t, "2026-11")
-	if !m.Contains(date(t, "2026-11-30")) || m.Contains(date(t, "2026-12-01")) {
+	if !m.Contains(date(t, nov30)) || m.Contains(date(t, "2026-12-01")) {
 		t.Error("2026-11 must contain 2026-11-30 and not 2026-12-01")
 	}
 }
