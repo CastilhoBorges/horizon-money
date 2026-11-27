@@ -131,7 +131,7 @@ func TestSeries_Expand(t *testing.T) {
 		},
 		{
 			name: "daily with an end date", frequency: domain.FrequencyDaily, start: "2026-11-28", end: nov30,
-			from: nov01, to: "2026-12-31", expected: []string{"2026-11-28", "2026-11-29", nov30},
+			from: nov01, to: dec31, expected: []string{"2026-11-28", "2026-11-29", nov30},
 		},
 		{
 			name: "rent that began years ago", frequency: domain.FrequencyMonthly, start: "2020-01-05",
@@ -235,7 +235,7 @@ func TestSeries_SplitAt(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SplitAt(%s) error = %v", feb28, err)
 	}
-	if got := dates(head.Expand(date(t, "2026-01-01"), date(t, "2026-12-31"), nil)); !slices.Equal(got, []string{jan31}) {
+	if got := dates(head.Expand(date(t, "2026-01-01"), date(t, dec31), nil)); !slices.Equal(got, []string{jan31}) {
 		t.Errorf("head = %v, want [%s]", got, jan31)
 	}
 	if got := dates(tail.Expand(date(t, "2026-02-01"), date(t, apr30), nil)); !slices.Equal(got, []string{feb28, mar31, apr30}) {
@@ -265,5 +265,175 @@ func TestSeries_WithAmount(t *testing.T) {
 		if o.Amount != 5000 {
 			t.Errorf("occurrence on %s has amount %d, want 5000", o.Date, o.Amount)
 		}
+	}
+}
+
+// installments builds an installment series of card spending or fails the test.
+func installments(t *testing.T, total domain.Amount, parts int, first string) domain.Series {
+	t.Helper()
+	s, err := domain.NewInstallments(domain.TypeCard, total, parts, date(t, first))
+	if err != nil {
+		t.Fatalf("NewInstallments(%d, %d, %s) error = %v", total, parts, first, err)
+	}
+	return s
+}
+
+// part is the date, part number and amount of one installment.
+type part struct {
+	date   string
+	number int
+	amount domain.Amount
+}
+
+func parts(occurrences []domain.Occurrence) []part {
+	out := make([]part, 0, len(occurrences))
+	for _, o := range occurrences {
+		out = append(out, part{date: o.Date.String(), number: o.Part, amount: o.Amount})
+	}
+	return out
+}
+
+func TestNewInstallments(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		total        domain.Amount
+		parts        int
+		expectedPart domain.Amount
+		expectedLast domain.Amount
+	}{
+		{name: "100.00 in 3", total: 10000, parts: 3, expectedPart: 3333, expectedLast: 3334},
+		{name: "1000.00 in 12", total: 100000, parts: 12, expectedPart: 8333, expectedLast: 8337},
+		{name: "10.00 in 360", total: 1000, parts: 360, expectedPart: 2, expectedLast: 282},
+		{name: "0.02 in 2", total: 2, parts: 2, expectedPart: 1, expectedLast: 1},
+		{name: "7.00 in 7", total: 700, parts: 7, expectedPart: 100, expectedLast: 100},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := installments(t, tt.total, tt.parts, jan10).Expand(date(t, jan10), date(t, "2060-12-31"), nil)
+			if len(got) != tt.parts {
+				t.Fatalf("expanded %d parts, want %d", len(got), tt.parts)
+			}
+			var sum domain.Amount
+			for i, o := range got {
+				expected := tt.expectedPart
+				if i == tt.parts-1 {
+					expected = tt.expectedLast
+				}
+				if o.Amount != expected || o.Part != i+1 || o.Parts != tt.parts {
+					t.Errorf("part %d = %d (%d/%d), want %d (%d/%d)", i+1, o.Amount, o.Part, o.Parts, expected, i+1, tt.parts)
+				}
+				sum += o.Amount
+			}
+			if sum != tt.total {
+				t.Errorf("parts sum to %d, want the total %d", sum, tt.total)
+			}
+		})
+	}
+}
+
+func TestNewInstallmentsRejectsInvalidInput(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		movement domain.MovementType
+		total    domain.Amount
+		parts    int
+		expected error
+	}{
+		{name: "one part", movement: domain.TypeCard, total: 10000, parts: 1, expected: domain.ErrInstallmentsOutOfRange},
+		{name: "361 parts", movement: domain.TypeCard, total: 10000, parts: 361, expected: domain.ErrInstallmentsOutOfRange},
+		{name: "less than a cent per part", movement: domain.TypeCard, total: 5, parts: 12, expected: domain.ErrInstallmentPartTooSmall},
+		{name: "zero total", movement: domain.TypeCard, total: 0, parts: 3, expected: domain.ErrAmountNotPositive},
+		{name: "a transfer is not a movement type", movement: "transfer", total: 10000, parts: 3, expected: domain.ErrUnknownMovementType},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			if _, err := domain.NewInstallments(tt.movement, tt.total, tt.parts, date(t, jan10)); !errors.Is(err, tt.expected) {
+				t.Errorf("NewInstallments(%d, %d) error = %v, want %v", tt.total, tt.parts, err, tt.expected)
+			}
+		})
+	}
+}
+
+func TestSeries_ExpandInstallments(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		series   domain.Series
+		from, to string
+		expected []part
+	}{
+		{
+			name: "the last part takes the remainder", series: installments(t, 10000, 3, jan10),
+			from: "2026-01-01", to: dec31,
+			expected: []part{{jan10, 1, 3333}, {feb10, 2, 3333}, {mar10, 3, 3334}},
+		},
+		{
+			name: "a purchase from august seen from a november D0", series: installments(t, 100000, 12, "2026-08-15"),
+			from: nov01, to: "2027-12-31",
+			expected: []part{
+				{"2026-11-15", 4, 8333},
+				{"2026-12-15", 5, 8333},
+				{"2027-01-15", 6, 8333},
+				{"2027-02-15", 7, 8333},
+				{"2027-03-15", 8, 8333},
+				{"2027-04-15", 9, 8333},
+				{"2027-05-15", 10, 8333},
+				{"2027-06-15", 11, 8333},
+				{"2027-07-15", 12, 8337},
+			},
+		},
+		{
+			name: "parts anchored on the 31st", series: installments(t, 10000, 3, jan31),
+			from: "2026-01-01", to: dec31,
+			expected: []part{{jan31, 1, 3333}, {feb28, 2, 3333}, {mar31, 3, 3334}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := parts(tt.series.Expand(date(t, tt.from), date(t, tt.to), nil))
+			if !slices.Equal(got, tt.expected) {
+				t.Errorf("Expand = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestSeries_SplitAtInstallments(t *testing.T) {
+	t.Parallel()
+
+	from, to := date(t, "2026-01-01"), date(t, dec31)
+	series := installments(t, 10000, 3, jan10)
+	head, tail, err := series.SplitAt(date(t, feb10))
+	if err != nil {
+		t.Fatalf("SplitAt(%s) error = %v", feb10, err)
+	}
+	if got := parts(head.Expand(from, to, nil)); !slices.Equal(got, []part{{jan10, 1, 3333}}) {
+		t.Errorf("head = %v, want [1/3]", got)
+	}
+	if got := parts(tail.Expand(from, to, nil)); !slices.Equal(got, []part{{feb10, 2, 3333}, {mar10, 3, 3334}}) {
+		t.Errorf("tail = %v, want the numbering to continue at 2/3", got)
+	}
+
+	edited, err := tail.WithAmount(4000)
+	if err != nil {
+		t.Fatalf("WithAmount(4000) error = %v", err)
+	}
+	if got := parts(edited.Expand(from, to, nil)); !slices.Equal(got, []part{{feb10, 2, 4000}, {mar10, 3, 4000}}) {
+		t.Errorf("edited tail = %v, want every part from there on at the edited amount", got)
+	}
+
+	if _, _, err := series.SplitAt(date(t, apr10)); !errors.Is(err, domain.ErrNotAnOccurrence) {
+		t.Errorf("SplitAt(after the last part) error = %v, want %v", err, domain.ErrNotAnOccurrence)
 	}
 }

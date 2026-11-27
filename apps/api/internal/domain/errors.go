@@ -24,10 +24,12 @@ var (
 
 // Movements and series.
 var (
-	ErrAmountNotPositive      = &Error{Code: "movement.amount_not_positive"}
-	ErrUnknownMovementType    = &Error{Code: "movement.type_unknown"}
-	ErrUnknownFrequency       = &Error{Code: "series.frequency_unknown"}
-	ErrEndBeforeStart         = &Error{Code: "series.end_before_start"}
-	ErrNotAnOccurrence        = &Error{Code: "series.not_an_occurrence"}
-	ErrSplitAtFirstOccurrence = &Error{Code: "series.split_at_first_occurrence"}
+	ErrAmountNotPositive       = &Error{Code: "movement.amount_not_positive"}
+	ErrUnknownMovementType     = &Error{Code: "movement.type_unknown"}
+	ErrUnknownFrequency        = &Error{Code: "series.frequency_unknown"}
+	ErrEndBeforeStart          = &Error{Code: "series.end_before_start"}
+	ErrInstallmentsOutOfRange  = &Error{Code: "series.installments_out_of_range"}
+	ErrInstallmentPartTooSmall = &Error{Code: "series.installment_part_too_small"}
+	ErrNotAnOccurrence         = &Error{Code: "series.not_an_occurrence"}
+	ErrSplitAtFirstOccurrence  = &Error{Code: "series.split_at_first_occurrence"}
 )

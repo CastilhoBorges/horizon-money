@@ -107,7 +107,7 @@ func TestDate_AddDays(t *testing.T) {
 		expected string
 	}{
 		{name: "into the next month", from: nov30, days: 1, expected: "2026-12-01"},
-		{name: "into the next year", from: "2026-12-31", days: 1, expected: "2027-01-01"},
+		{name: "into the next year", from: dec31, days: 1, expected: "2027-01-01"},
 		{name: "onto a leap day", from: "2028-02-28", days: 1, expected: leapDay},
 		{name: "backwards", from: "2026-03-01", days: -1, expected: "2026-02-28"},
 	}

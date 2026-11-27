@@ -13,6 +13,12 @@ const (
 	FrequencyInstallments Frequency = "installments"
 )
 
+// Installment counts accepted at creation (§4.5).
+const (
+	MinInstallments = 2
+	MaxInstallments = 360
+)
+
 // Series is the rule that produces a repeated movement's occurrences. Occurrences are expanded on read
 // for the range asked (§6.3). A following split turns one series into two that share a series group.
 type Series struct {
@@ -74,6 +80,29 @@ func NewRecurring(t MovementType, f Frequency, amount Amount, start, end Date) (
 	return Series{Type: t, Frequency: f, Start: start, End: end, AnchorDay: start.Day(), Amount: amount}, nil
 }
 
+// NewInstallments splits total into parts monthly parts from first, numbered 1 to parts. Each part is the
+// total ÷ parts rounded down to the minor unit and the last part takes the remainder, so the parts sum
+// exactly to the total. A total below one minor unit per part is refused.
+func NewInstallments(t MovementType, total Amount, parts int, first Date) (Series, error) {
+	if !t.isValid() {
+		return Series{}, ErrUnknownMovementType
+	}
+	if total <= 0 {
+		return Series{}, ErrAmountNotPositive
+	}
+	if parts < MinInstallments || parts > MaxInstallments {
+		return Series{}, ErrInstallmentsOutOfRange
+	}
+	part, last := splitParts(total, parts)
+	if part == 0 {
+		return Series{}, ErrInstallmentPartTooSmall
+	}
+	return Series{
+		Type: t, Frequency: FrequencyInstallments, Start: first, AnchorDay: first.Day(),
+		Amount: part, LastAmount: last, Parts: parts, FirstPart: 1,
+	}, nil
+}
+
 // Expand lists the occurrences that count between from and to, inclusive, sorted by date. Exceptions
 // apply by the date the series produced: an override moved into the range appears and one moved out of
 // it disappears. Keys the series never produces are ignored.
@@ -83,7 +112,7 @@ func (s Series) Expand(from, to Date, exceptions map[Date]Exception) []Occurrenc
 		e, ok := exceptions[original]
 		switch {
 		case !ok:
-			out = append(out, s.occurrence(original, original, s.Amount))
+			out = append(out, s.occurrence(original, original, s.amountOf(original)))
 		case !e.Deleted && inRange(e.Date, from, to):
 			out = append(out, s.occurrence(e.Date, original, e.Amount))
 		}
@@ -116,20 +145,57 @@ func (s Series) SplitAt(at Date) (head, tail Series, err error) {
 	head, tail = s, s
 	head.End = at.AddDays(-1)
 	tail.Start = at
+	if s.Frequency == FrequencyInstallments {
+		tail.FirstPart = s.partOf(at)
+	}
 	return head, tail, nil
 }
 
-// WithAmount sets the amount of every occurrence, for a following or all edit.
+// WithAmount sets the amount of every occurrence, for a following or all edit. For installments it is
+// the value per part from there on, the last part included; the total is whatever the parts now sum to.
 func (s Series) WithAmount(a Amount) (Series, error) {
 	if a <= 0 {
 		return Series{}, ErrAmountNotPositive
 	}
 	s.Amount = a
+	if s.Frequency == FrequencyInstallments {
+		s.LastAmount = a
+	}
 	return s, nil
 }
 
 func (s Series) occurrence(at, original Date, amount Amount) Occurrence {
-	return Occurrence{Date: at, Original: original, Amount: amount}
+	o := Occurrence{Date: at, Original: original, Amount: amount}
+	if s.Frequency == FrequencyInstallments {
+		o.Part, o.Parts = s.partOf(original), s.Parts
+	}
+	return o
+}
+
+// amountOf is the template amount of the occurrence the series produces on original.
+func (s Series) amountOf(original Date) Amount {
+	if s.Frequency == FrequencyInstallments && s.partOf(original) == s.Parts {
+		return s.LastAmount
+	}
+	return s.Amount
+}
+
+// partOf is the installment number of a date the series produces.
+func (s Series) partOf(original Date) int {
+	return s.FirstPart + monthsBetween(MonthOf(s.Start), MonthOf(original))
+}
+
+// lastDate is the last day the series may produce: End, or the last part's date for installments,
+// whichever comes first. ok is false for a series with no end.
+func (s Series) lastDate() (last Date, ok bool) {
+	last = s.End
+	if s.Frequency == FrequencyInstallments {
+		lastPart := anchoredDate(MonthOf(s.Start).Add(s.Parts-s.FirstPart), s.AnchorDay)
+		if last.IsZero() || lastPart.Before(last) {
+			last = lastPart
+		}
+	}
+	return last, !last.IsZero()
 }
 
 // ruleDates lists the dates the series produces between from and to, inclusive, without walking the
@@ -139,8 +205,8 @@ func (s Series) ruleDates(from, to Date) []Date {
 	if from.After(lo) {
 		lo = from
 	}
-	if !s.End.IsZero() && s.End.Before(hi) {
-		hi = s.End
+	if last, ok := s.lastDate(); ok && last.Before(hi) {
+		hi = last
 	}
 	if hi.Before(lo) {
 		return nil
@@ -169,7 +235,7 @@ func (s Series) ruleDates(from, to Date) []Date {
 
 // isRuleDate reports whether the series produces d.
 func (s Series) isRuleDate(d Date) bool {
-	if d.Before(s.Start) || (!s.End.IsZero() && d.After(s.End)) {
+	if last, ok := s.lastDate(); d.Before(s.Start) || (ok && d.After(last)) {
 		return false
 	}
 	switch s.Frequency {

@@ -51,5 +51,8 @@ func (m Month) Add(n int) Month { return MonthOf(Date{t: m.First().t.AddDate(0, 
 // Contains reports whether d falls in the month.
 func (m Month) Contains(d Date) bool { return d.Year() == m.year && d.Month() == m.month }
 
+// monthsBetween counts the months from a to b: positive when b is later.
+func monthsBetween(a, b Month) int { return (b.year-a.year)*12 + int(b.month) - int(a.month) }
+
 // String formats the month as "YYYY-MM".
 func (m Month) String() string { return m.First().t.Format(monthLayout) }
