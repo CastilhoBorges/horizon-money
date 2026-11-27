@@ -14,11 +14,13 @@ import (
 type Config struct {
 	Port     int
 	LogLevel slog.Level
+	// DatabaseURL is the Postgres connection string. serve and migrate require it; healthcheck does not.
+	DatabaseURL string
 }
 
 // Load builds a Config from getenv, applying defaults and rejecting invalid values.
 func Load(getenv func(string) string) (Config, error) {
-	cfg := Config{Port: 8080, LogLevel: slog.LevelInfo}
+	cfg := Config{Port: 8080, LogLevel: slog.LevelInfo, DatabaseURL: getenv("DATABASE_URL")}
 	var errs []error
 
 	if raw := getenv("PORT"); raw != "" {
