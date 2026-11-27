@@ -16,4 +16,5 @@ One file per decision, never rewritten. A changed decision gets a new ADR that s
 | [0009](0009-superpowers-and-shared-agent-skills.md) | Superpowers workflow and agent skills shared by every agent | Accepted |
 | [0010](0010-built-in-oauth-authorization-server.md) | Built-in OAuth 2.1 authorization server for MCP | Accepted |
 | [0011](0011-account-pages-rendered-by-go.md) | Account pages rendered by the Go server | Accepted |
+| [0012](0012-domain-calculation-details.md) | Calculation details the domain spec leaves open | Accepted |
 <!-- index:end -->

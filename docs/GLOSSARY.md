@@ -29,6 +29,8 @@ identifiers, API fields, MCP tool names and docs.
 | série | `series` | The rule that produces repeated occurrences |
 | ocorrência | `occurrence` | One dated instance of a series |
 | parcelado | `installments` | A total split into N monthly parts |
+| parcela | `part` | One installment, numbered "3/12" |
+| dia âncora | `anchor day` | The day of the month a monthly series falls on; the last day in shorter months |
 | escopo da edição | `scope` | `this`, `following` or `all` occurrences |
 | grupo da série | `series group` | The series a `following` split produced, edited together by `all` |
 
@@ -45,6 +47,7 @@ identifiers, API fields, MCP tool names and docs.
 | diário médio | `average daily` | Daily spending ÷ elapsed days |
 | visão consolidada | `consolidated view` | Every workspace's balance in the main currency |
 | cotação | `rate` | BCB PTAX closing rate, cached per currency and date |
+| — | `ledger` | A workspace's settings, movements and transfers as the domain reads them to compute views |
 
 ## Platform
 
