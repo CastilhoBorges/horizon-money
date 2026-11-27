@@ -1,8 +1,12 @@
 # Architecture
 
 This folder describes the code **as it is**. Add one file per area as the area is built (`http.md`,
-`mcp.md`, `persistence.md`, `money-and-dates.md`, `auth.md`, …) and list it below. The target design is
-in [`../specs/`](../specs/).
+`mcp.md`, `persistence.md`, `auth.md`, …) and list it below. The target design is in
+[`../specs/`](../specs/).
+
+## Areas
+
+- [`domain.md`](domain.md): money, dates, series, forecast, balances and summaries (`internal/domain`)
 
 ## Repository layout
 
@@ -47,5 +51,6 @@ and `domain` depends on nothing. The boundaries are enforced by lint, not by con
 |---|---|
 | Entry point (`serve`, `healthcheck`, graceful shutdown, slog JSON) | Built |
 | Configuration from env | Built (port, log level) |
+| Domain (`internal/domain`) and the `Clock` port | Built: money, dates, series, forecast, balances, summaries |
 | HTTP | `GET /healthz` only |
 | Everything else | See the v0.1 milestone |
