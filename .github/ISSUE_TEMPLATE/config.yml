@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and ideas
+    url: https://github.com/CastilhoBorges/horizon-money/discussions
+    about: Ask how to use or self-host Horizon Money, or discuss an idea before opening an issue.
+  - name: Report a vulnerability
+    url: https://github.com/CastilhoBorges/horizon-money/security/advisories/new
+    about: Please report security issues privately, never in a public issue.
