@@ -37,6 +37,7 @@ var (
 	ErrInstallmentPartTooSmall = &Error{Code: "series.installment_part_too_small"}
 	ErrNotAnOccurrence         = &Error{Code: "series.not_an_occurrence"}
 	ErrSplitAtFirstOccurrence  = &Error{Code: "series.split_at_first_occurrence"}
+	ErrInvalidSeries           = &Error{Code: "series.invalid"}
 )
 
 // Forecast and views.

@@ -103,6 +103,62 @@ func NewInstallments(t MovementType, total Amount, parts int, first Date) (Serie
 	}, nil
 }
 
+// Validate checks a series rebuilt from storage, so a corrupt row surfaces as an error instead of a
+// wrong balance. The constructors and edit methods always return valid series.
+func (s Series) Validate() error {
+	switch {
+	case !s.Type.isValid():
+		return ErrUnknownMovementType
+	case s.Start.IsZero():
+		return ErrInvalidDate
+	case s.Amount <= 0:
+		return ErrAmountNotPositive
+	case !s.End.IsZero() && s.End.Before(s.Start):
+		return ErrEndBeforeStart
+	case s.AnchorDay < 1 || s.AnchorDay > 31:
+		return ErrInvalidSeries
+	}
+	switch s.Frequency {
+	case FrequencyDaily, FrequencyWeekly:
+		return s.validateNoParts()
+	case FrequencyMonthly:
+		if err := s.validateNoParts(); err != nil {
+			return err
+		}
+		return s.validateAnchor()
+	case FrequencyInstallments:
+		return s.validateParts()
+	}
+	return ErrUnknownFrequency
+}
+
+func (s Series) validateNoParts() error {
+	if s.LastAmount != 0 || s.Parts != 0 || s.FirstPart != 0 {
+		return ErrInvalidSeries
+	}
+	return nil
+}
+
+// validateAnchor checks that a monthly series or an installment starts on its anchor day.
+func (s Series) validateAnchor() error {
+	if s.Start != anchoredDate(MonthOf(s.Start), s.AnchorDay) {
+		return ErrInvalidSeries
+	}
+	return nil
+}
+
+func (s Series) validateParts() error {
+	switch {
+	case s.Parts < MinInstallments || s.Parts > MaxInstallments:
+		return ErrInstallmentsOutOfRange
+	case s.LastAmount <= 0:
+		return ErrAmountNotPositive
+	case s.FirstPart < 1 || s.FirstPart > s.Parts:
+		return ErrInvalidSeries
+	}
+	return s.validateAnchor()
+}
+
 // Expand lists the occurrences that count between from and to, inclusive, sorted by date. Exceptions
 // apply by the date the series produced: an override moved into the range appears and one moved out of
 // it disappears. Keys the series never produces are ignored.
