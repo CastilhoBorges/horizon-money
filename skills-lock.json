@@ -1,0 +1,271 @@
+{
+  "version": 2,
+  "skills": {
+    "brainstorming": {
+      "source": "obra/superpowers",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "sourceType": "github",
+      "skillPath": "skills/brainstorming/SKILL.md",
+      "computedHash": "a7424777b7f81e3eb9b4556d29fe233553736d8255780d3e1feea190fef61fef"
+    },
+    "diagnosing-superpowers": {
+      "source": "obra/superpowers",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "sourceType": "github",
+      "skillPath": "skills/diagnosing-superpowers/SKILL.md",
+      "computedHash": "44d0295c3d59d6418f80c96e40d8e7b7ece99513ab6e63e5d04b1cf87cc5bbab"
+    },
+    "dispatching-parallel-agents": {
+      "source": "obra/superpowers",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "sourceType": "github",
+      "skillPath": "skills/dispatching-parallel-agents/SKILL.md",
+      "computedHash": "d799e464fdfb0edc80b3b7ad7cce03e64ee07fc5db231c988688a81438503659"
+    },
+    "docker-compose-patterns": {
+      "source": "docker/skills",
+      "commit": "fbcef37a595f1e0cc992524e31360b25f936706f",
+      "sourceType": "github",
+      "skillPath": "skills/docker-compose-patterns/SKILL.md",
+      "computedHash": "fd752b44e789bbf42f8c0edd92df89c84871d46aee92785230e5260f866e8f99"
+    },
+    "documentation-and-adrs": {
+      "source": "addyosmani/agent-skills",
+      "commit": "e997ac5b9a74eab332d5e9793bb38a38c8cfdd74",
+      "sourceType": "github",
+      "skillPath": "skills/documentation-and-adrs/SKILL.md",
+      "computedHash": "deb39d7c8157563bc14a48f0d22003c82f4d8370b69c96efde476fe12318d188"
+    },
+    "executing-plans": {
+      "source": "obra/superpowers",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "sourceType": "github",
+      "skillPath": "skills/executing-plans/SKILL.md",
+      "computedHash": "58b364f6e3f64602c7cfd0b34ceaad9de95d41fe7e4b46b274843ba19fc01ccc"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "commit": "e7fd0e9e52f029fe87729d8185cb8caf7049f678",
+      "sourceType": "github",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "computedHash": "7bc223e2aafbdbf6e50ea243ba6ef67fe432bb069ab439fea0390795dac0bf7f"
+    },
+    "finishing-a-development-branch": {
+      "source": "obra/superpowers",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "sourceType": "github",
+      "skillPath": "skills/finishing-a-development-branch/SKILL.md",
+      "computedHash": "7e24d821d45b8f10773edd9f1a4be2fac90eedae4f8fc8e70e34e27e44d3f3c0"
+    },
+    "github-actions-hardening": {
+      "source": "github/awesome-copilot",
+      "commit": "93fc8b9ee3ef56b9b5e7261e6ce92d314cb2c1cf",
+      "sourceType": "github",
+      "skillPath": "skills/github-actions-hardening/SKILL.md",
+      "computedHash": "ce7df8e90622480a41ffae4a81c78dbf4de3a6965cc21a91693efdf15fb3284c"
+    },
+    "go-mcp-server-generator": {
+      "source": "github/awesome-copilot",
+      "commit": "93fc8b9ee3ef56b9b5e7261e6ce92d314cb2c1cf",
+      "sourceType": "github",
+      "skillPath": "skills/go-mcp-server-generator/SKILL.md",
+      "computedHash": "f14aff8aec88255f75778617efdc12921ab7e2f3fb1ea419539242785084b09d"
+    },
+    "golang-code-style": {
+      "source": "samber/cc-skills-golang",
+      "commit": "d68d80aec298e1b74b37c2a472c002b5217248b3",
+      "sourceType": "github",
+      "skillPath": "skills/golang-code-style/SKILL.md",
+      "computedHash": "8013e3aeeb53e66e8dd52a1dd2d2f622ed59cde7426fad7f42c77de7fca424f8"
+    },
+    "golang-continuous-integration": {
+      "source": "samber/cc-skills-golang",
+      "commit": "d68d80aec298e1b74b37c2a472c002b5217248b3",
+      "sourceType": "github",
+      "skillPath": "skills/golang-continuous-integration/SKILL.md",
+      "computedHash": "9fbae059833a865d905f6341498fc26b9e50f9b782fffb3bbb68b87ce48ff53c"
+    },
+    "golang-database": {
+      "source": "samber/cc-skills-golang",
+      "commit": "d68d80aec298e1b74b37c2a472c002b5217248b3",
+      "sourceType": "github",
+      "skillPath": "skills/golang-database/SKILL.md",
+      "computedHash": "d56ece0241eacc7a15cd3679300b80100d527c3a83d5b475f631bb8c7ddd8bff"
+    },
+    "golang-dependency-management": {
+      "source": "samber/cc-skills-golang",
+      "commit": "d68d80aec298e1b74b37c2a472c002b5217248b3",
+      "sourceType": "github",
+      "skillPath": "skills/golang-dependency-management/SKILL.md",
+      "computedHash": "f06642b4f2b10af0adf0b3b454545bf645b83e9f226c3f2a34717754fd339157"
+    },
+    "golang-design-patterns": {
+      "source": "samber/cc-skills-golang",
+      "commit": "d68d80aec298e1b74b37c2a472c002b5217248b3",
+      "sourceType": "github",
+      "skillPath": "skills/golang-design-patterns/SKILL.md",
+      "computedHash": "d3e4f4be5506709261b6fa43eee3d52f968c37ca5d83f4408c43a1d1f9c0da86"
+    },
+    "golang-documentation": {
+      "source": "samber/cc-skills-golang",
+      "commit": "d68d80aec298e1b74b37c2a472c002b5217248b3",
+      "sourceType": "github",
+      "skillPath": "skills/golang-documentation/SKILL.md",
+      "computedHash": "5cbd30122d143c70c06ef2f903db21d12586cc532ad285da9bce9c647c6ba03a"
+    },
+    "golang-error-handling": {
+      "source": "samber/cc-skills-golang",
+      "commit": "d68d80aec298e1b74b37c2a472c002b5217248b3",
+      "sourceType": "github",
+      "skillPath": "skills/golang-error-handling/SKILL.md",
+      "computedHash": "81f5c3fcd0324c4ed9b8ee50d3375b0f3074b0308ee9b5c0778d6cbf32bedf9c"
+    },
+    "golang-how-to": {
+      "source": "samber/cc-skills-golang",
+      "commit": "d68d80aec298e1b74b37c2a472c002b5217248b3",
+      "sourceType": "github",
+      "skillPath": "skills/golang-how-to/SKILL.md",
+      "computedHash": "17f53db31d588f0798df5736dedf3f6b4655d658a2669a92d72bd33f0de7717b"
+    },
+    "golang-lint": {
+      "source": "samber/cc-skills-golang",
+      "commit": "d68d80aec298e1b74b37c2a472c002b5217248b3",
+      "sourceType": "github",
+      "skillPath": "skills/golang-lint/SKILL.md",
+      "computedHash": "a1aec81b2c6b8441dd8e5bba762ea1b679bd01cd88879730edc2404af0601503"
+    },
+    "golang-naming": {
+      "source": "samber/cc-skills-golang",
+      "commit": "d68d80aec298e1b74b37c2a472c002b5217248b3",
+      "sourceType": "github",
+      "skillPath": "skills/golang-naming/SKILL.md",
+      "computedHash": "81ff21a879a65ded0f26cd2f71edf913f07bcd4f4c4521b260875fd15df8fc94"
+    },
+    "golang-observability": {
+      "source": "samber/cc-skills-golang",
+      "commit": "d68d80aec298e1b74b37c2a472c002b5217248b3",
+      "sourceType": "github",
+      "skillPath": "skills/golang-observability/SKILL.md",
+      "computedHash": "380d7e4e3dc126ad3b3154e8a6c13928f8a78f30dca94c58f6faa4d89edc8bdc"
+    },
+    "golang-project-layout": {
+      "source": "samber/cc-skills-golang",
+      "commit": "d68d80aec298e1b74b37c2a472c002b5217248b3",
+      "sourceType": "github",
+      "skillPath": "skills/golang-project-layout/SKILL.md",
+      "computedHash": "bd8ad6f0fd05ba05a135af9eb766fdf7d838c33cb07aa4625bfd16a9fbe76903"
+    },
+    "golang-security": {
+      "source": "samber/cc-skills-golang",
+      "commit": "d68d80aec298e1b74b37c2a472c002b5217248b3",
+      "sourceType": "github",
+      "skillPath": "skills/golang-security/SKILL.md",
+      "computedHash": "050d04076da4c392e80620b26688de64aab74da46f486f1fc784fa8a2f3b0444"
+    },
+    "golang-testing": {
+      "source": "samber/cc-skills-golang",
+      "commit": "d68d80aec298e1b74b37c2a472c002b5217248b3",
+      "sourceType": "github",
+      "skillPath": "skills/golang-testing/SKILL.md",
+      "computedHash": "adfaf95d45383e8e579de1770ea0f25d0729b3e94e0b003ea08d1646646f7247"
+    },
+    "mcp-builder": {
+      "source": "anthropics/skills",
+      "commit": "e4bb5d960d87126ff3b3a8af1a104b7db67560ba",
+      "sourceType": "github",
+      "skillPath": "skills/mcp-builder/SKILL.md",
+      "computedHash": "5a699fa929d99d7e6b1ebe10f13bf960d9ad452b70bd0733efd5d1de9524e285"
+    },
+    "receiving-code-review": {
+      "source": "obra/superpowers",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "sourceType": "github",
+      "skillPath": "skills/receiving-code-review/SKILL.md",
+      "computedHash": "528d336858d6f7d22cfcb887a249409ce682cb7d37a939cb15a82f2576a35876"
+    },
+    "requesting-code-review": {
+      "source": "obra/superpowers",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "sourceType": "github",
+      "skillPath": "skills/requesting-code-review/SKILL.md",
+      "computedHash": "32bcc25e8c3315d0150f646ee0067c9d4bfbc7719c34012db9c202e17cce8a14"
+    },
+    "subagent-driven-development": {
+      "source": "obra/superpowers",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "sourceType": "github",
+      "skillPath": "skills/subagent-driven-development/SKILL.md",
+      "computedHash": "da0ad5e635b6ff70c2b6dbf25e51ae6ca1cad6beebfc61a791195675468c492e"
+    },
+    "supabase-postgres-best-practices": {
+      "source": "supabase/agent-skills",
+      "commit": "c9be0e931b7930f7d02126d04774d904c381e7d7",
+      "sourceType": "github",
+      "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
+      "computedHash": "3eb972c2d7c818e544e35cc33ea8d7147d4d78ae08142ef40037b0fbac7a2505"
+    },
+    "systematic-debugging": {
+      "source": "obra/superpowers",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "sourceType": "github",
+      "skillPath": "skills/systematic-debugging/SKILL.md",
+      "computedHash": "79ff0583175346e39431b0dc713b223edd1bd7a7ea2b6c8b78b2fb9a3fed6782"
+    },
+    "tdd": {
+      "source": "mattpocock/skills",
+      "commit": "6f7f7831a625f040a8e06a0e7954826b87ce775a",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/tdd/SKILL.md",
+      "computedHash": "e3e0f78ff1c2d52ffefa0378baa1e80e129d359288cf9a56f4e59afcd2aac86c"
+    },
+    "test-driven-development": {
+      "source": "obra/superpowers",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "sourceType": "github",
+      "skillPath": "skills/test-driven-development/SKILL.md",
+      "computedHash": "2782702b2cf69ace085ed30d067b6f8bfd2d777ad51770fc5bdae9cb5c1b5c04"
+    },
+    "turborepo": {
+      "source": "vercel/turborepo",
+      "commit": "51d6ddfcbb35d7cc264ee9b6e0ef8f4f82fc23d1",
+      "sourceType": "github",
+      "skillPath": "skills/turborepo/SKILL.md",
+      "computedHash": "49bb6427015253ce5d93f15dfa6c9ade3f8528f0fbe54769b6da1e1458f058d4"
+    },
+    "using-git-worktrees": {
+      "source": "obra/superpowers",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "sourceType": "github",
+      "skillPath": "skills/using-git-worktrees/SKILL.md",
+      "computedHash": "b69324cb5e5ba5b846fc2ae2811616008dc6f19858245100e472713190d4c9e4"
+    },
+    "using-superpowers": {
+      "source": "obra/superpowers",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "sourceType": "github",
+      "skillPath": "skills/using-superpowers/SKILL.md",
+      "computedHash": "6a9104fac7e16c3cec2bc118943aefd331cac35b4cfabd427cea4dc16337c6a5"
+    },
+    "verification-before-completion": {
+      "source": "obra/superpowers",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "sourceType": "github",
+      "skillPath": "skills/verification-before-completion/SKILL.md",
+      "computedHash": "09b0e3a4689c1c38a3b8fc6ef57a1d4165aa33c0013d546dbde9dd348941a319"
+    },
+    "writing-plans": {
+      "source": "obra/superpowers",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "sourceType": "github",
+      "skillPath": "skills/writing-plans/SKILL.md",
+      "computedHash": "ef082ddb5354d736059397133b3682e8a0c85c57906affe47c9da354cbb7c91e"
+    },
+    "writing-skills": {
+      "source": "obra/superpowers",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "sourceType": "github",
+      "skillPath": "skills/writing-skills/SKILL.md",
+      "computedHash": "50d87a4c2c6a9d60156ccfdbe844e0a11678968157e494a8a8c02377c273483a"
+    }
+  }
+}

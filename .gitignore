@@ -1,0 +1,31 @@
+# OS and editors
+.DS_Store
+*.swp
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Environment (only the example is tracked)
+.env
+.env.*
+!.env.example
+
+# Node / Turborepo / Next.js
+node_modules/
+.turbo/
+.next/
+dist/
+coverage/
+
+# Go
+apps/api/bin/
+*.test
+*.out
+*.coverprofile
+
+# Agent local state (never committed)
+.claude/worktrees/
+.claude/settings.local.json
+
+# Logs
+*.log
